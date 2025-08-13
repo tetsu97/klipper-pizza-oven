@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Klipper PIZZA Oven{% endblock %}
+
+{% block content %}
+<div class="panel active">
+  <!-- ==== DASHBOARD ==== -->
+  <div class="dash">
+    <!-- Status row -->
+    <section class="dash-card dash-status" id="dashStatus">
+      <div class="dash-status-left">
+        <span class="dash-state" id="dashState">—</span>
+        <div class="dash-meta">
+          <div><span class="muted">Name:</span> <b id="dashFile">—</b></div>
+          <div><span class="muted">Progres:</span> <b id="dashProgressText">0%</b></div>
+          <div><span class="muted">Time:</span> <b id="dashTimes">— / ETA —</b></div>
+        </div>
+      </div>
+      <div class="dash-status-right">
+        <div class="dash-emergency">
+          <button id="btnFwRestart" type="button">Firmware restart</button>
+          <button id="btnEStop" type="button" class="btn--danger">Emergency stop</button>
+        </div>
+      </div>
+      <div class="dash-progress"><div id="dashProgressBar" style="width:0%"></div></div>
+    </section>
+
+    <!-- Grid -->
+    <div class="dash-grid">
+      <!-- Job / Files -->
+      <section class="dash-card" id="dashJobCard">
+        <div class="dash-card-head">
+          <h3 id="dashJobTitle">Actual program</h3>
+          
+          <div id="dashClearStateContainer" style="display: none;">
+            <button id="dashClearStateBtn" type="button">Clear Status</button>
+          </div>
+
+          <div class="dash-actions" id="dashActions">
+            <button id="dashPause">Pause</button>
+            <button id="dashResume">Resume</button>
+            <button id="dashCancel" class="danger">Cancel</button>
+          </div>
+        </div>
+        <div id="dashJobDetail" class="dash-job-detail">
+        <div class="dash-preview" id="dashPreview">—</div>
+        <div class="dash-kv">
+          <div><span>Name:</span><b id="dashJobName">—</b></div>
+          
+        </div>
+      </div>
+
+      <div id="dashFileList" class="dash-file-list" hidden>
+        <table class="responsive-table">
+          <thead>
+            <tr><th>Name</th><th>Last modified</th><th>Size</th><th></th></tr>
+          </thead>
+          <tbody id="dashRecentFiles"></tbody>
+        </table>
+      </div>
+      </section>
+
+      <!-- Temps -->
+      <section class="dash-card" id="dashTempsCard">
+        <div class="dash-card-head"><h3>Temperature</h3></div>
+        <div class="dash-temps-layout">
+          <table class="temps">
+            <thead><tr><th>Sensor</th><th>Actual</th><th>Target</th></tr></thead>
+            <tbody id="dashTempsTable"></tbody>
+          </table>
+          <div class="chart-wrap">
+            <canvas id="dashTempChart"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mini Console -->
+      <section class="dash-card" id="dashConsoleCard">
+        <div class="dash-card-head"><h3>Console</h3></div>
+        <pre id="dashConsoleLog" class="dash-console" aria-live="polite"></pre>
+        <div class="dash-console-input">
+          <input id="dashConsoleInput" placeholder="Enter a command (e.g. M105)">
+          <button id="dashConsoleSend">Send</button>
+        </div>
+      </section>
+    </div>
+  </div>
+  <!-- ==== /DASHBOARD ==== -->
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="/static/js/pages/dashboard.js"></script>
+{% endblock %}

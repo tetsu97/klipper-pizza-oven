@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Machine · Klipper PIZZA Oven{% endblock %}
+
+{% block head_extra %}
+  <link rel="stylesheet" href="/static/vendor/codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="/static/vendor/codemirror/theme/material-darker.css">
+{% endblock %}
+
+{% block content %}
+<div class="panel active">
+
+  <!-- Mini status (volitelné sjednocení s ostatními) -->
+  {% include "partials/status_bar.html" %}
+
+  <div class="machine-grid">
+    <!-- LEFT: File manager -->
+    <div class="machine-col left">
+      <div class="panel-ish" style="margin-bottom:14px;">
+        <div class="row space-between" style="margin-bottom:.5rem;">
+          <h2 style="margin:0;">Machine</h2>
+          <div style="display:flex; align-items:center; gap:.75rem;">
+            <div class="machine-toolbar">
+              <span id="diskUsage">Disk: …</span>
+              <button id="openCreateFileBtn">Create</button>
+              <button id="machineRefreshBtn">Refresh</button>
+            </div>
+          </div>
+        </div>
+
+        <table id="machineTable" class="responsive-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Name</th>
+              <th>File size</th>
+              <th>Last modified</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: Update manager + System loads -->
+    <div class="machine-col right">
+      <div class="panel-ish" style="margin-bottom:14px;">
+        <div class="row space-between" style="margin-bottom:.5rem;">
+          <h2 style="margin:0;">Update Manager</h2>
+          <div>
+            <button id="updRefreshBtn">↻ Refresh</button>
+            <button id="updAllBtn">Update all</button>
+          </div>
+        </div>
+        <table id="updateTable" class="responsive-table">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Component</th>
+              <th>Installed</th>
+              <th>Latest</th>
+              <th>Status</th>
+              <th style="width:1%;">Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="panel-ish sysloads">
+        <h2 style="margin:0 0 .5rem 0;">System Loads</h2>
+        <div class="sysloads-row">
+          <div class="sysloads-col">
+            <div class="syslabel">OS</div>
+            <div id="sysOs" class="muted">—</div>
+          </div>
+          <div class="sysloads-col">
+            <div class="syslabel">CPU temp</div>
+            <div id="sysCpuTemp" class="muted">—</div>
+          </div>
+          <div class="sysloads-col">
+            <div class="syslabel">Memory</div>
+            <div class="membar"><div class="membar-fill" id="sysMemBar" style="width:0%"></div></div>
+            <div id="sysMemText" class="muted">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Create file -->
+  <div id="createFileModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 900px;">
+      <div class="row space-between align">
+        <h2 style="margin:0;">Create file</h2>
+        <button id="createCloseBtn" style="margin:0;background:#444;">Close</button>
+      </div>
+
+      <label>File path (relative to config dir):</label>
+      <input id="createFilePath" placeholder="macros/my_macro.cfg">
+
+      <label>Content:</label>
+      <textarea id="createFileContent" spellcheck="false" style="height:280px;"></textarea>
+
+      <div class="actions-right">
+        <button id="createFileSaveBtn" class="btn--primary">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Edit file (CodeMirror + rename) -->
+  <div id="editFileModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 1000px;">
+      <div class="row space-between align">
+        <h2 style="margin:0;">Edit file</h2>
+        <button id="editFileCloseBtn" style="margin:0;background:#444;">Close</button>
+      </div>
+
+      <label>File name (relative to config):</label>
+      <input id="editFileName" placeholder="macros/my_macro.cfg">
+
+      <textarea id="editFileTextarea" spellcheck="false" style="height:60vh;"></textarea>
+
+      <div class="actions-right">
+        <button id="editFileSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
+  <script src="/static/vendor/codemirror/addon/overlay.js"></script>
+  <script src="/static/vendor/codemirror/mode/properties/properties.js"></script>
+  <script src="/static/vendor/codemirror/mode/klipper.js"></script>
+
+  <script type="module" src="/static/js/pages/machine.js"></script>
+  <script src="/static/js/components/statusbar.js"></script>
+{% endblock %}

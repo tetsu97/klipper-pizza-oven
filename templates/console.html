@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Console · Klipper PIZZA Oven{% endblock %}
+
+{% block content %}
+<div class="panel active">
+  {% include "partials/status_bar.html" %}
+  <h2>Console</h2>
+  <div id="consoleLog" class="console-log" style="height: 360px; background:#0f1124; border:1px solid #242a4f; border-radius:10px; padding:10px; overflow:auto;"></div>
+
+  <br><div class="row gap console-input">
+  <input id="consoleInput" type="text" placeholder="Enter G-code (e.g. M105, M118 Hello)" />
+  <button id="consoleSendBtn" type="button" onclick="sendConsole()">Send</button>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script type="module" src="/static/js/pages/console.js"></script>
+  <script src="/static/js/components/statusbar.js"></script>
+  <script src="/static/js/active-link.js" defer></script>
+{% endblock %}

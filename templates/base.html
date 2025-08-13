@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8"/>
+  <title>{% block title %}Klipper PIZZA Oven{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <div class="layout">
+    <div class="sidebar">
+      <button id="sidebarToggle" class="sidebar-toggle">☰</button>
+      <h1 class="brand brand--stack">
+        <span class="brand-main">Klipper</span>
+        <span class="brand-sub">PIZZA Oven</span>
+      </h1>
+      <ul>
+        <!-- Active class podle contextu "active" -->
+        <li><a href="/dashboard" class="{{ 'active' if page_id == 'dashboard' else '' }}">Dashboard</a></li>
+        <li><a href="/console"   class="{{ 'active' if page_id == 'console'   else '' }}">Console</a></li>
+        <li><a href="/profiles"  class="{{ 'active' if page_id == 'profiles'  else '' }}">Profiles</a></li>
+        <li><a href="/machine"   class="{{ 'active' if page_id == 'machine'   else '' }}">Machine</a></li>
+      </ul>
+      <div id="versionInfo">Alpha v0.8</div>
+    </div>
+
+    <div class="main">
+      <button id="sidebarToggleMain" class="sidebar-toggle">☰</button>
+      {% block content %}{% endblock %}
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const s1 = document.getElementById('sidebarToggle');
+      const s2 = document.getElementById('sidebarToggleMain');
+      const sidebar = document.querySelector('.sidebar');
+      function toggle(){ sidebar.classList.toggle('open'); }
+      s1 && s1.addEventListener('click', toggle);
+      s2 && s2.addEventListener('click', toggle);
+    })();
+  </script>
+
+  <script src="/static/js/app.js" defer></script>
+
+  {% block scripts %}
+    <script src="/static/js/components/sidebar-brand.js"></script>
+  {% endblock %}
+  <div id="startJobModal" class="modal" style="display: none;">
+  <div class="modal-content" style="max-width: 600px;">
+    
+    <div class="row space-between align">
+      <h2 id="startJobModalTitle" style="margin:0; overflow-wrap: break-word;">Spustit program</h2>
+      <button id="startJobModalCloseBtn" style="margin:0;background:#444;">Zavřít</button>
+    </div>
+
+    <div class="chart-wrap" style="height: 250px; margin-top: 1rem; background: #0f1124;">
+      <canvas id="startJobModalChart"></canvas>
+    </div>
+
+    <div style="text-align: center; margin-top: 1rem; font-size: 1.1rem;">
+      <strong>Celkový čas:</strong>
+      <span id="startJobModalDuration">—</span>
+    </div>
+
+    <div class="actions-right" style="text-align: center; margin-top: 1.5rem;">
+      <button id="startJobModalConfirmBtn" style="padding: .6rem 1.5rem; font-size: 1.1rem;">Start</button>
+    </div>
+
+  </div>
+</div>
+<div id="toast-container"></div>
+</body>
+</html>

@@ -1,0 +1,243 @@
+// /static/js/app.js (NOVÝ GLOBÁLNÍ SOUBOR)
+
+let ws = null;
+let reconnectTimer = null;
+let rpcId = 1;
+
+function connectWebSocket() {
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        return;
+    }
+    const proto = (location.protocol === 'https:') ? 'wss' : 'ws';
+    const url = `${proto}://${location.host}/websocket`;
+    console.log("Global WS: Connecting to", url);
+
+    try {
+        ws = new WebSocket(url);
+        ws.onopen = () => {
+            console.log("Global WS: Connected");
+            rpcId = 1;
+            ws.send(JSON.stringify({
+                jsonrpc: "2.0", method: "printer.objects.query",
+                params: { objects: { "print_stats": null, "display_status": null, "toolhead": null, "gcode_move": null, "heater_generic pizza_oven": null } },
+                id: rpcId++
+            }));
+            ws.send(JSON.stringify({
+                jsonrpc: "2.0", method: "printer.objects.subscribe",
+                params: { objects: { "print_stats": null, "display_status": null, "heater_generic pizza_oven": null, "gcode": null } },
+                id: rpcId++
+            }));
+        };
+        ws.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            let statusData = null;
+
+            if (msg.id === 1 && msg.result?.status) {
+                statusData = msg.result.status;
+            } else if (msg.method === 'notify_status_update') {
+                statusData = msg.params[0];
+            }
+
+            if (statusData) {
+                // Křičíme do celé aplikace: "Mám nová data!"
+                document.dispatchEvent(new CustomEvent('klipper-status-update', { detail: statusData }));
+            }
+
+            if (msg.method === 'notify_gcode_response') {
+                // Signál pro konzoli
+                document.dispatchEvent(new CustomEvent('klipper-gcode-response', { detail: msg.params[0] }));
+            }
+        };
+        ws.onclose = () => {
+            console.log("Global WS: Disconnected. Reconnecting in 3s...");
+            ws = null; clearTimeout(reconnectTimer);
+            reconnectTimer = setTimeout(connectWebSocket, 3000);
+        };
+        ws.onerror = (err) => { ws.close(); };
+    } catch (e) {
+        console.error("Global WS: Failed to create WebSocket", e);
+        clearTimeout(reconnectTimer);
+        reconnectTimer = setTimeout(connectWebSocket, 5000);
+    }
+}
+
+function sendGcode(script) {
+    if (!ws || ws.readyState !== WebSocket.OPEN) { return; }
+    ws.send(JSON.stringify({
+        jsonrpc: "2.0", method: "printer.gcode.script",
+        params: { "script": script }, id: rpcId++
+    }));
+}
+
+// Spustíme připojení, jakmile je stránka načtená
+document.addEventListener('DOMContentLoaded', connectWebSocket);
+
+const StartJobModal = {
+  modal: null,
+  titleEl: null,
+  durationEl: null,
+  confirmBtn: null,
+  chartCanvas: null,
+  chart: null,
+  currentFile: null,
+
+  init() {
+    this.modal = document.getElementById('startJobModal');
+    this.titleEl = document.getElementById('startJobModalTitle');
+    this.durationEl = document.getElementById('startJobModalDuration');
+    this.confirmBtn = document.getElementById('startJobModalConfirmBtn');
+    this.chartCanvas = document.getElementById('startJobModalChart');
+    const closeBtn = document.getElementById('startJobModalCloseBtn');
+
+    if (!this.modal) return;
+
+    closeBtn?.addEventListener('click', () => this.close());
+    this.confirmBtn?.addEventListener('click', () => this.start());
+    this.modal.addEventListener('click', (e) => {
+      if (e.target === this.modal) this.close();
+    });
+  },
+
+  async open(fileName) {
+    if (!this.modal) this.init();
+    this.currentFile = fileName;
+    this.titleEl.textContent = fileName;
+    this.durationEl.textContent = 'Načítám...';
+    this.modal.style.display = 'flex';
+
+    try {
+      // 1. Stáhneme si data o G-kódu (body profilu)
+      const res = await fetch(`/api/gcodes/load?name=${encodeURIComponent(fileName)}`);
+      if (!res.ok) throw new Error('Nepodařilo se načíst data programu.');
+      const data = await res.json();
+      
+      const points = data.points || [];
+
+      // 2. Vypočítáme celkový čas
+      if (points.length > 0) {
+        const lastPoint = points[points.length - 1];
+        const totalMinutes = lastPoint.time || 0;
+        const h = Math.floor(totalMinutes / 60);
+        const m = totalMinutes % 60;
+        this.durationEl.textContent = `${h}h ${m}m`;
+      } else {
+        this.durationEl.textContent = 'Neznámý';
+      }
+
+      // 3. Vykreslíme graf
+      this.renderChart(points);
+
+    } catch (e) {
+      console.error(e);
+      this.durationEl.textContent = 'Chyba!';
+      if(this.chart) this.chart.destroy();
+    }
+  },
+
+  close() {
+    this.modal.style.display = 'none';
+    if (this.chart) {
+      this.chart.destroy();
+      this.chart = null;
+    }
+  },
+
+  async start() {
+    if (!this.currentFile) return;
+    
+    try {
+      const response = await fetch(`/api/gcodes/start?name=${encodeURIComponent(this.currentFile)}`, {
+          method: 'POST'
+      });
+
+      if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Chyba serveru: ${errorText}`);
+      }
+      
+      Toast.show(`Spouštím: ${this.currentFile}`, 'info');
+
+    } catch (err) {
+      console.error("Spuštění G-códu selhalo:", err);
+      Toast.show(`Spuštění selhalo: ${err.message}`, 'error');
+    } finally {
+      this.close();
+    }
+  },
+
+  renderChart(points) {
+    if (this.chart) this.chart.destroy();
+    if (!this.chartCanvas) return;
+
+    const ctx = this.chartCanvas.getContext('2d');
+    const labels = points.map(p => p.time);
+    const temps = points.map(p => p.temp);
+
+    this.chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Teplota (°C)',
+          data: temps,
+          borderColor: '#f44336',
+          backgroundColor: 'rgba(244,67,54,.2)',
+          tension: .1,
+          pointRadius: 4,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#fff' }, title: { display: true, text: 'Čas (min)', color: '#fff' } },
+          y: { ticks: { color: '#fff' }, title: { display: true, text: 'Teplota (°C)', color: '#fff' } }
+        }
+      }
+    });
+  }
+};
+StartJobModal.init();
+
+const Toast = {
+  container: null,
+
+  init() {
+    this.container = document.getElementById('toast-container');
+  },
+
+  /**
+   * Zobrazí toast notifikaci.
+   * @param {string} message Zpráva k zobrazení.
+   * @param {'info'|'success'|'error'} type Typ notifikace (ovlivní barvu).
+   * @param {number} duration Doba zobrazení v milisekundách.
+   */
+  show(message, type = 'info', duration = 4000) {
+    if (!this.container) this.init();
+    if (!this.container) return;
+
+    // Vytvoříme nový element pro notifikaci
+    const toastElement = document.createElement('div');
+    toastElement.className = `toast toast--${type}`;
+    toastElement.textContent = message;
+
+    // Přidáme ho do kontejneru
+    this.container.appendChild(toastElement);
+
+    // Po krátké chvíli přidáme třídu 'show' pro spuštění animace
+    setTimeout(() => {
+      toastElement.classList.add('show');
+    }, 10);
+
+    // Nastavíme časovač pro odstranění notifikace
+    setTimeout(() => {
+      toastElement.classList.remove('show');
+      // Po skončení animace odstraníme element z DOM
+      toastElement.addEventListener('transitionend', () => {
+        toastElement.remove();
+      });
+    }, duration);
+  }
+};

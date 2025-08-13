@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Profiles · Klipper PIZZA Oven{% endblock %}
+
+{% block content %}
+<div class="panel active">
+
+  <!-- Mini status (stav/progress/teplota) -->
+  {% include "partials/status_bar.html" %}
+
+  <h2>Profiles</h2>
+  <div class="row align gap-small">
+    <button id="profilesRefreshBtn">Refresh</button>
+    <button id="openGeneratorBtn">Create</button>
+  </div>
+
+  <table id="profilesTable" class="responsive-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>File size</th>
+        <th>Last modified</th>
+        <th>Filament</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <!-- ============ MODAL: Create program (Generator) ============ -->
+  <div id="generatorModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 1100px;">
+      <div class="row space-between align">
+        <h2 style="margin:0;">Create program</h2>
+        <button id="genCloseBtn" style="margin:0;background:#444;">Close</button>
+      </div>
+
+      <div class="row gap-small" style="margin-top:.5rem;">
+        <button id="btn-annealing" class="active" style="margin:0;">Annealing</button>
+        <button id="btn-drying"    style="margin:0;background:#555;">Drying</button>
+      </div>
+
+      <!-- dvousloupec odshora: vlevo pole/segmenty, vpravo graf + gcode -->
+      <div class="two-col" style="margin-top:1rem;">
+        <div>
+          <label>Program name:</label>
+          <input type="text" id="programName" placeholder="Program">
+
+          <label>Filament type:</label>
+          <input type="text" id="filamentType" placeholder="(PC-CF, ABS-CF...)">
+
+          <div id="annealingInputs">
+            <h3 style="margin:.8rem 0 .4rem;">Segments</h3>
+            <table id="genSegmentsTable">
+              <thead>
+                <tr><th>From (min)</th><th>To (min)</th><th>Temp (°C)</th><th>Action</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div class="centered-row">
+              <button id="genAddSegmentBtn">Add segment</button>
+            </div>
+          </div>
+
+          <div id="dryingInputs" style="display:none;">
+            <div class="row gap">
+              <div class="w-400">
+                <label>Drying time (min):</label>
+                <input type="number" id="dryingTime" value="300" min="1">
+              </div>
+              <div class="w-400">
+                <label>Drying temp (°C):</label>
+                <input type="number" id="dryingTemp" value="60" min="1">
+              </div>
+            </div>
+          </div>
+
+          <div class="row gap">
+            <button id="genGenerateBtn">Generate</button>
+            <button id="genDownloadBtn" style="background:#3a5;">Download</button>
+            <button id="genSaveBtn">Save to Klipper</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="chart-wrap" style="height:280px;">
+            <canvas id="chart"></canvas>
+          </div>
+          <label>Generated G-code:</label>
+          <textarea id="gcodeOutput" spellcheck="false"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL: Edit Program (sjednoceno s Create) ============ -->
+  <div id="editModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 1100px;">
+      <div class="row space-between align">
+        <h2 style="margin:0;">Edit Program</h2>
+        <button id="editCloseBtn" style="margin:0;background:#444;">Close</button>
+      </div>
+
+      <!-- dvousloupec odshora, stejně jako v Create -->
+      <div class="two-col" style="margin-top:1rem;">
+        <!-- Levý sloupec: pole + segmenty -->
+        <div>
+          <label>Program name:</label>
+          <input type="text" id="editProgramName">
+
+          <label>Filament type:</label>
+          <input type="text" id="editFilamentType">
+
+          <h3 style="margin:1rem 0 .4rem;">Segments</h3>
+          <table id="segmentsTable">
+            <thead>
+              <tr><th>From (min)</th><th>To (min)</th><th>Temp (°C)</th><th>Action</th></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="centered-row">
+            <button id="editAddSegmentBtn">Add segment</button>
+          </div>
+        </div>
+
+        <!-- Pravý sloupec: graf -->
+        <div>
+          <div class="chart-wrap" style="height:280px;">
+            <canvas id="editPointsChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="actions-right">
+        <button id="editCancelBtn" style="background:#444;">Cancel</button>
+        <button id="editSaveBtn">Save</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="/static/js/pages/profiles.js"></script>
+  <script src="/static/js/components/statusbar.js"></script>
+{% endblock %}

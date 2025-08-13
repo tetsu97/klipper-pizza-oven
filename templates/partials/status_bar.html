@@ -1,0 +1,26 @@
+<div class="ovenStatusPanel">
+  <div class="os-bar">
+    <!-- Levo: stav -->
+    <div class="os-left">
+      <strong>Status:</strong>
+      <span class="js-status-icon os-pill"></span>
+      <span class="js-status-text" aria-live="polite">Loading...</span>
+    </div>
+
+    <!-- Střed: teplota -->
+    <div class="os-center">
+      <strong>Temperature:</strong>
+      <span class="js-oven-temp">-- °C</span>
+    </div>
+
+    <!-- Vpravo: FW restart + Emergency stop -->
+    <div class="os-right">
+      <button id="osFwRestart" type="button">Firmware restart</button>
+      <button id="osEStop"   type="button" class="danger">Emergency stop</button>
+    </div>
+  </div>
+
+  <div class="os-progress">
+    <div class="bar" data-bind="progress" style="width:0%"></div>
+  </div>
+</div>

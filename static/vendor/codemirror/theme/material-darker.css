@@ -1,0 +1,174 @@
+/*
+  CodeMirror "material-darker" — customized for your app
+  Palette:
+    Background: #0f111a / panels #1c1e2a / editor bg #1e2135
+    Text:       #e0e0e0
+    Accents:    Blue #3fa9f5 (hover #66bff9), Muted #a0acc0
+*/
+
+/* Base editor surface */
+.cm-s-material-darker.CodeMirror {
+  background: #1e2135;
+  color: #e0e0e0;
+  line-height: 1.45;
+}
+
+/* Gutters (line numbers) */
+.cm-s-material-darker .CodeMirror-gutters {
+  background: #1c1e2a;
+  border-right: 1px solid #2a2f45;
+}
+.cm-s-material-darker .CodeMirror-linenumber {
+  color: #8b93a7;
+}
+
+/* Caret & selection */
+.cm-s-material-darker .CodeMirror-cursor {
+  border-left: 2px solid #3fa9f5;
+}
+.cm-s-material-darker .CodeMirror-selected {
+  background: rgba(63, 169, 245, 0.2);
+}
+.cm-s-material-darker .CodeMirror-focused .CodeMirror-selected {
+  background: rgba(63, 169, 245, 0.25);
+}
+
+/* Active line highlight */
+.cm-s-material-darker .CodeMirror-activeline-background {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Matching brackets/tags */
+.cm-s-material-darker .CodeMirror-matchingbracket {
+  color: #ffffff;
+  background: rgba(63, 169, 245, 0.22);
+  outline: 1px solid #3fa9f5;
+}
+.cm-s-material-darker .CodeMirror-matchingtag {
+  background: rgba(63, 169, 245, 0.16);
+}
+
+/* Search matches */
+.cm-s-material-darker .CodeMirror-search-match {
+  background: rgba(255, 215, 0, 0.28);
+  outline: 1px solid #ffd700;
+}
+.cm-s-material-darker .CodeMirror-selection-highlight {
+  background: rgba(63, 169, 245, 0.18);
+}
+
+/* Scrollbars (WebKit + Firefox) on the scroll area */
+.cm-s-material-darker .CodeMirror-scroll {
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: #3fa9f5 #2b2b2b;      /* thumb, track */
+}
+.cm-s-material-darker .CodeMirror-scroll::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.cm-s-material-darker .CodeMirror-scroll::-webkit-scrollbar-track {
+  background: #2b2b2b;
+}
+.cm-s-material-darker .CodeMirror-scroll::-webkit-scrollbar-thumb {
+  background-color: #3fa9f5;
+  border-radius: 4px;
+  border: 2px solid #2b2b2b;
+}
+.cm-s-material-darker .CodeMirror-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #66bff9;
+}
+
+/* ---- Syntax colors (INI/properties + G-code overlay) ---- */
+
+/* comments: ; this is comment */
+.cm-s-material-darker .cm-comment {
+  color: #8b93a7;
+  font-style: italic;
+}
+
+/* section headers: [section] */
+.cm-s-material-darker .cm-header,
+.cm-s-material-darker .cm-def {   /* used by properties mode for section */
+  color: #66bff9;
+}
+
+/* keys: key = value */
+.cm-s-material-darker .cm-attribute,  /* property key */
+.cm-s-material-darker .cm-property {
+  color: #9ad1ff;
+}
+
+/* values (strings, numbers, booleans) */
+.cm-s-material-darker .cm-string {
+  color: #c6f6d5; /* soft green */
+}
+.cm-s-material-darker .cm-number {
+  color: #b5f5ff; /* cyan-ish numbers */
+}
+.cm-s-material-darker .cm-atom,       /* true/false/on/off */
+.cm-s-material-darker .cm-builtin {
+  color: #fdb37a; /* warm orange */
+}
+
+/* keywords (if used) */
+.cm-s-material-darker .cm-keyword {
+  color: #aab2ff;
+}
+
+/* variables (rare in properties, used by overlays) */
+.cm-s-material-darker .cm-variable,
+.cm-s-material-darker .cm-variable-2,
+.cm-s-material-darker .cm-variable-3 {
+  color: #ffd6a5;
+}
+
+/* errors */
+.cm-s-material-darker .cm-error {
+  color: #ff8a80;
+  text-decoration: wavy underline;
+}
+
+/* URLs/tags (just in case) */
+.cm-s-material-darker .cm-link,
+.cm-s-material-darker .cm-tag {
+  color: #7dd3fc;
+}
+
+/* ---- Optional: G-code overlay tint ----
+   If you defined the custom overlay mode "klipperProps" that marks
+   G/M/T/SET_* tokens with class 'atom', they'll reuse .cm-atom color above.
+   You can make them pop a bit more here:
+*/
+.cm-s-material-darker .cm-atom.cm-gcode,
+.cm-s-material-darker .cm-builtin.cm-gcode {
+  color: #66bff9;
+  font-weight: 600;
+}
+
+.cm-s-material-darker.CodeMirror {
+  min-height: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* === Mainsail-like mapping (Monaco/VSCode Dark+) === */
+.cm-s-material-darker .cm-comment        { color:#6A9955; font-style:italic; }   /* # komentáře */
+
+.cm-s-material-darker .cm-header         { color:#569CD6; }                      /* [gcode_macro ...] závorky/prefix */
+.cm-s-material-darker .cm-def            { color:#9CDCFE; font-weight:600; }     /* název makra */
+
+.cm-s-material-darker .cm-keyword        { color:#CE9178; font-weight:600; }     /* gcode: štítek oranžově */
+
+.cm-s-material-darker .cm-atom.cm-gcode  { color:#4FC1FF; font-weight:700; }     /* G/M/T/SET_* příkazy */
+
+.cm-s-material-darker .cm-jinja-delim    { color:#C586C0; }                      /* {{ }}, {% %} */
+.cm-s-material-darker .cm-jinja-key      { color:#C586C0; font-weight:600; }     /* set/if/for/in… */
+.cm-s-material-darker .cm-variable-2     { color:#9CDCFE; font-weight:600; }     /* params, printer */
+.cm-s-material-darker .cm-jinja-var      { color:#9CDCFE; }                       /* ostatní ident. */
+.cm-s-material-darker .cm-operator       { color:#D4D4D4; }                       /* tečka . */
+.cm-s-material-darker .cm-number         { color:#B5CEA8; }                       /* čísla v ( ) */
+
+.cm-s-material-darker .cm-jinja-filter-delim { color:#4EC9B0; }                   /* | */
+.cm-s-material-darker .cm-jinja-filter       { color:#4EC9B0; font-weight:600; }  /* default, float... */
+
+.cm-s-material-darker .cm-bracket        { color:#D4D4D4; }                       /* ( ) */
