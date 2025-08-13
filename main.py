@@ -251,20 +251,6 @@ def get_disk_for_path(mount_path: str):
 # =========================
 MOONRAKER = settings.moonraker_url
 
-@app.get("/api/printer/print_status")
-async def get_print_status(request: Request):
-    """Vrátí pouze stav z objektu print_stats."""
-    client = request.app.state.http_client
-    try:
-        r = await client.get("/printer/objects/query?print_stats=state")
-        r.raise_for_status()
-        return r.json()
-    except httpx.RequestError:
-        # Během restartu je normální, že je služba dočasně nedostupná
-        return JSONResponse(status_code=503, content={"error": "Klipper is restarting"})
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
-
 @app.get("/api/status")
 async def status_alias():
     return await status_ext()
