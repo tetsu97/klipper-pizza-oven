@@ -13,6 +13,7 @@ from settings import settings
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from typing import Any, Dict, List, Optional, Tuple
+from starlette.websockets import WebSocketState, WebSocketDisconnect
 
 import httpx
 from fastapi import Body, FastAPI, HTTPException, Query, Request, WebSocket
@@ -250,6 +251,20 @@ def get_disk_for_path(mount_path: str):
 # =========================
 MOONRAKER = settings.moonraker_url
 
+@app.get("/api/printer/print_status")
+async def get_print_status(request: Request):
+    """Vrátí pouze stav z objektu print_stats."""
+    client = request.app.state.http_client
+    try:
+        r = await client.get("/printer/objects/query?print_stats=state")
+        r.raise_for_status()
+        return r.json()
+    except httpx.RequestError:
+        # Během restartu je normální, že je služba dočasně nedostupná
+        return JSONResponse(status_code=503, content={"error": "Klipper is restarting"})
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
+
 @app.get("/api/status")
 async def status_alias():
     return await status_ext()
@@ -393,16 +408,22 @@ async def websocket_proxy(client_ws: WebSocket):
                     message = await server_ws.recv()
                     await client_ws.send_text(message)
 
-            # Spustíme obě funkce souběžně a čekáme, dokud jedna neskončí (např. zavřením tabu)
             await asyncio.gather(client_to_server(), server_to_client())
 
-    except (websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedError):
-        print("INFO:     WebSocket connection closed.")
+    # Ošetření normálního odpojení ze strany klienta (prohlížeče)
+    except WebSocketDisconnect as e:
+        print(f"INFO:     Client WebSocket disconnected: {e.code}")
+
+    # Ošetření normálního odpojení ze strany Moonrakeru
+    except (websockets.exceptions.ConnectionClosed, websockets.exceptions.ConnectionClosedOK) as e:
+        print(f"INFO:     Moonraker WebSocket connection closed: {e.code} {e.reason}")
+    
+    # Ošetření ostatních, neočekávaných chyb
     except Exception as e:
-        print(f"ERROR:    WebSocket proxy error: {e}")
-    finally:
-        await client_ws.close()
-        print("INFO:     WebSocket proxy client connection closed.")
+        print(f"ERROR:    An unexpected WebSocket proxy error occurred: {e}")
+    
+    # Blok finally už není potřeba, protože 'async with' a 'WebSocketDisconnect'
+    # se postarají o korektní uzavření na obou stranách.
 
 # =========================
 # UPDATE MANAGER (proxy)

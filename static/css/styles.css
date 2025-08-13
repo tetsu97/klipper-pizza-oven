@@ -748,3 +748,34 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   background-color: #2a3a4a;
   border-left: 5px solid #5b86ff;
 }
+
+/* ===== Loading Overlay ===== */
+#loadingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.2rem;
+  backdrop-filter: blur(5px);
+}
+
+#loadingOverlay .spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #444;
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
