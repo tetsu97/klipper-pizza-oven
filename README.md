@@ -1,4 +1,4 @@
-# 🍕 Klipper PIZZA Oven
+# 🍕 Klipper PIZZA Oven 🍕
 
 A self-hosted web application to control and monitor a DIY annealing and drying oven running on Klipper firmware.
 
