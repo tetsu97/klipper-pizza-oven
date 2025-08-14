@@ -1,72 +1,113 @@
 # 🍕 Klipper PIZZA Oven 🍕
 
-A self-hosted web application to control and monitor a DIY annealing and drying oven running on Klipper firmware.
+![GitHub stars](https://img.shields.io/github/stars/tetsu97/klipper-pizza-oven?style=social)
+![GitHub forks](https://img.shields.io/github/forks/tetsu97/klipper-pizza-oven?style=social)
+![License](https://img.shields.io/github/license/tetsu97/klipper-pizza-oven)
 
-## 🔍 What is it?
+A modern, responsive, and user-friendly web interface for controlling a 3D printer with Klipper firmware, specially adapted for drying and annealing filaments or for use as a "pizza oven".
 
-**Klipper PIZZA Oven** is a custom-tailored web interface—similar in spirit to Mainsail or Fluidd—designed specifically for managing a specialized oven used for **annealing or drying 3D printing filaments**.
-
-Built with 3D printing enthusiasts in mind, this app enables precise profile creation, real-time monitoring, and seamless G-code generation for heating cycles via Klipper.
-
----
-
-## 🛠️ Features
-
-- 🎛️ Create and edit annealing/drying temperature profiles
-- 📊 Interactive graphing of temperature curves using Chart.js
-- 🧠 G-code generation based on user-defined segments
-- 🔍 Embedded G-code thumbnail preview support
-- 🔌 Live Klipper/Moonraker integration via WebSocket
-- 🖥️ Modal-based UI optimized for both desktop and mobile (WIP)
+The application is built on a **FastAPI** backend and communicates with Klipper via the **Moonraker API**.
 
 ---
 
-## 🚀 Installation & Requirements
+## 📸 Screenshots
 
-This app is intended to run **alongside your Klipper + Moonraker setup**.
+*(I recommend inserting a few images of your application here, for example, the dashboard and the profiles page)*
 
-> ⚠️ It’s currently in active development. Installation is manual. Future plans include packaging as a plug-and-play module.
-
-### Requirements:
-- ✅ [Klipper](https://www.klipper3d.org/)
-- ✅ [Moonraker](https://github.com/Arksine/moonraker)
-- ✅ Python 3.9+ with [FastAPI](https://fastapi.tiangolo.com/)
-- ✅ Modern browser
+| Dashboard | Profiles |
+| :---: | :---: |
+| `[Insert Dashboard Image Here]` | `[Insert Profiles Image Here]` |
 
 ---
 
-## 📈 Tech Stack
+## ✨ Key Features
 
-- **HTML / CSS / JavaScript**
-- **Chart.js** for graph rendering
-- **FastAPI** backend (for G-code generation & API)
-- **WebSocket** connection to Moonraker
-- **Klipper G-code thumbnails** for visual previews
+* **🖥️ Clean Dashboard:** Monitor temperature, program progress, and G-code preview in real-time, and control your printer.
+* **📂 Profile Management:** Create, edit, and manage profiles for filament drying and annealing.
+* **📊 G-code Generator:** Easily generate G-code based on temperature segments or a fixed temperature and time.
+* **📈 Interactive Charts:** Get a visual preview of the temperature curve during profile creation and program execution.
+* **⌨️ Terminal & Console:** Send G-code commands directly to Klipper and view the responses in real-time.
+* **📱 Fully Responsive Design:** Control your oven comfortably from your computer, tablet, or mobile phone.
+* **📝 File Editor:** Edit Klipper configuration files (`printer.cfg`, etc.) directly from the web interface.
 
 ---
 
-## 📦 Roadmap
+## 🛠️ Tech Stack
 
-- 📱 Touch-friendly UI for Raspberry Pi displays (e.g. 5", 7")
-- 📦 Packaging as an installable Moonraker extension
-- 🌐 Localized UI (multi-language support)
+* **Backend:** Python 3, FastAPI, Uvicorn, Jinja2
+* **Frontend:** HTML5, CSS3, Vanilla JavaScript (ES6+)
+* **Visualization:** Chart.js
+* **Code Editor:** CodeMirror
+* **Klipper Communication:** Moonraker API
+
+---
+
+## 🚀 Installation and Setup
+
+### Prerequisites
+
+* Python 3.8+ installed.
+* A working installation of Klipper and Moonraker on your printer/device.
+* Network access to the device.
+
+### Installation Steps
+
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/tetsu97/klipper-pizza-oven.git](https://github.com/tetsu97/klipper-pizza-oven.git)
+    cd klipper-pizza-oven
+    ```
+
+2.  **Create and activate a virtual environment:**
+    ```bash
+    # For Linux / macOS
+    python3 -m venv venv
+    source venv/bin/activate
+
+    # For Windows
+    python -m venv venv
+    .\venv\Scripts\activate
+    ```
+
+3.  **Install the required dependencies:**
+    *(I recommend creating a `requirements.txt` file with the following content)*
+    ```
+    fastapi
+    uvicorn[standard]
+    jinja2
+    python-dotenv
+    requests
+    ```
+    Then install using:
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+4.  **Configure the Klipper connection:**
+    Rename the `.env.example` file to `.env` and modify the values to match the IP address and port of your Moonraker API.
+
+    **`.env` file:**
+    ```
+    KLIPPER_HOST=192.168.1.100
+    KLIPPER_PORT=7125
+    GCODE_DIR=/home/pi/printer_data/gcodes
+    CONFIG_DIR=/home/pi/printer_data/config
+    ```
+
+5.  **Run the application:**
+    ```bash
+    uvicorn main:app --reload
+    ```
+    The application will be available by default at `http://127.0.0.1:8000`.
 
 ---
 
 ## 🤝 Contributing
 
-🚧 Currently closed to public contributions. If you’re interested, stay tuned for when the repo opens!
+Have an idea for an improvement or found a bug? Feel free to create an *Issue* or send a *Pull Request*. All contributions are welcome!
 
 ---
 
-## 📜 License
+## 📄 License
 
-This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.
-
-You are free to use, modify, and distribute this software under the terms of the GPLv3. See the [LICENSE](./LICENSE) file for more information.
-
----
-
-## 🙏 Acknowledgments
-
-Inspired by Mainsail, Fluidd, and the awesome Klipper/Moonraker ecosystem ❤️
+This project is licensed under the **MIT License**. For more information, see the [LICENSE](LICENSE) file.
