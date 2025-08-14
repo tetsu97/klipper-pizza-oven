@@ -35,11 +35,12 @@ class GcodeScriptPayload(BaseModel):
 
 class GcodeSavePayload(BaseModel):
     name: str
-    program_name: str
-    filament_type: Optional[str] = None # volitelný parametr
-    mode: str = "annealing" # výchozí hodnota
-    points: List[Dict[str, Any]]
-    overwrite: bool
+    gcode: Optional[str] = None
+    overwrite: bool = False
+    program_name: Optional[str] = None
+    filament_type: Optional[str] = None
+    mode: str = "annealing"
+    points: Optional[List[Dict[str, Any]]] = None
     drying_time: Optional[int] = None
     drying_temp: Optional[int] = None
 
@@ -250,6 +251,20 @@ def get_disk_for_path(mount_path: str):
 # MOONRAKER / PRINTER
 # =========================
 MOONRAKER = settings.moonraker_url
+
+@app.get("/api/printer/print_status")
+async def get_print_status(request: Request):
+    """Vrátí pouze stav z objektu print_stats."""
+    client = request.app.state.http_client
+    try:
+        r = await client.get("/printer/objects/query?print_stats=state")
+        r.raise_for_status()
+        return r.json()
+    except httpx.RequestError:
+        # Během restartu je normální, že je služba dočasně nedostupná
+        return JSONResponse(status_code=503, content={"error": "Klipper is restarting"})
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
 
 @app.get("/api/status")
 async def status_alias():
@@ -589,20 +604,6 @@ async def generate_gcode(payload: GenerateGcodePayload):
     lines = _points_to_gcode_lines(program_name, filament_type, mode, points, drying_time, drying_temp)
     return JSONResponse({"gcode": "\n".join(lines)})
 
-@app.post("/api/save_gcode")
-async def save_gcode(payload: Dict[str, Any] = Body(...)):
-    filename = (payload.get("filename") or "").strip()
-    gcode = (payload.get("gcode") or "").rstrip()
-    if not filename or not gcode:
-        raise HTTPException(status_code=400, detail="Missing filename or gcode")
-    safe = make_safe_filename(filename)
-    safe = ensure_gcode_extension(safe)
-    target = (GCODE_DIR / safe).resolve()
-    if not is_safe_child(target, GCODE_DIR):
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    target.write_text(gcode, encoding="utf-8")
-    return {"ok": True, "filename": target.name}
-
 @app.get("/api/gcodes")
 async def list_gcodes():
     files: List[Dict[str, Any]] = []
@@ -653,7 +654,6 @@ async def load_gcode_meta(name: str = Query(...)):
 
 @app.post("/api/gcodes/save")
 async def gcodes_save(payload: GcodeSavePayload):
-
     safe_filename = make_safe_filename(payload.name)
     safe_filename = ensure_gcode_extension(safe_filename)
     target_path = (GCODE_DIR / safe_filename).resolve()
@@ -663,22 +663,30 @@ async def gcodes_save(payload: GcodeSavePayload):
 
     if not payload.overwrite and target_path.exists():
         raise HTTPException(
-            status_code=409, 
+            status_code=409,
             detail=f"File '{target_path.name}' already exists. Use overwrite=true to replace it."
         )
 
-    gcode_lines = _points_to_gcode_lines(
-        program_name=payload.program_name,
-        filament_type=payload.filament_type,
-        mode=payload.mode,
-        points=payload.points,
-        drying_time=payload.drying_time,
-        drying_temp=payload.drying_temp,
-    )
+    # Buď použijeme G-kód z payloadu, nebo ho vygenerujeme
+    gcode_content = ""
+    if payload.gcode is not None:
+        gcode_content = payload.gcode
+    elif payload.program_name and payload.points:
+        gcode_lines = _points_to_gcode_lines(
+            program_name=payload.program_name,
+            filament_type=payload.filament_type,
+            mode=payload.mode,
+            points=payload.points,
+            drying_time=payload.drying_time,
+            drying_temp=payload.drying_temp,
+        )
+        gcode_content = "\n".join(gcode_lines)
+    else:
+        raise HTTPException(status_code=400, detail="Either 'gcode' or generation parameters ('program_name', 'points') must be provided.")
 
     try:
-        target_path.write_text("\n".join(gcode_lines), encoding="utf-8")
-        return {"ok": True, "name": target_path.name}
+        target_path.write_text(gcode_content, encoding="utf-8")
+        return {"ok": True, "name": target_path.name, "size": target_path.stat().st_size}
     except Exception as e:
         logging.error(f"Failed to write G-code file {target_path.name}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Failed to save file to disk.")

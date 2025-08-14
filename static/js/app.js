@@ -241,3 +241,71 @@ const Toast = {
     }, duration);
   }
 };
+
+// ====== Globální Overlay a Akce ======
+
+/**
+ * Zobrazí překryvnou vrstvu s načítáním.
+ * @param {string} message Zpráva, která se zobrazí uživateli.
+ */
+function showLoadingOverlay(message = 'Pracuji...') {
+  const overlay = document.getElementById('loadingOverlay');
+  const overlayText = document.getElementById('loadingOverlayText');
+  if (overlayText) {
+    overlayText.textContent = message;
+  }
+  if (overlay) {
+    overlay.style.display = 'flex'; // Změna na 'flex' pro zobrazení
+  }
+}
+
+/**
+ * Skryje překryvnou vrstvu s načítáním.
+ */
+function hideLoadingOverlay() {
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.style.display = 'none'; // Změna na 'none' pro skrytí
+  }
+}
+
+/**
+ * Zpracuje požadavek na restart firmwaru s potvrzením a zpětnou vazbou.
+ */
+async function handleFirmwareRestart() {
+  if (!confirm('Opravdu restartovat Klipper firmware?\n(Tím se zruší jakýkoliv běžící proces.)')) return;
+
+  showLoadingOverlay('Restartuji Klipper... čekejte prosím.');
+  sendGcode('FIRMWARE_RESTART');
+
+  // Čekáme na zprávu z websocketu, že Klipper je opět připraven
+  const waitForReady = new Promise((resolve) => {
+    const listener = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.method === 'notify_klippy_ready') {
+          ws.removeEventListener('message', listener);
+          resolve();
+        }
+      } catch (e) {}
+    };
+    ws.addEventListener('message', listener);
+  });
+
+  // Timeout fallback (např. 15 sekund)
+  const timeout = new Promise(resolve => setTimeout(resolve, 15000));
+
+  await Promise.race([waitForReady, timeout]);
+
+  hideLoadingOverlay();
+  Toast.show('Klipper je připraven.', 'success');
+}
+
+/**
+ * Zpracuje požadavek na nouzové zastavení.
+ */
+function handleEmergencyStop() {
+  if (!confirm('VÁŽNĚ PROVÉST NOUZOVÉ ZASTAVENÍ?\nTato akce okamžitě zastaví stroj.')) return;
+  sendGcode('M112');
+  Toast.show('NOUZOVÉ ZASTAVENÍ AKTIVOVÁNO!', 'error');
+}

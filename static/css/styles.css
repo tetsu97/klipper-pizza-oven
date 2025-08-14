@@ -752,16 +752,21 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 /* ===== Loading Overlay ===== */
 #loadingOverlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  z-index: 9998;
-  display: flex;
+  z-index: 9999;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh; /* 'vh' je spolehlivější na mobilech */
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
+  
+  /* display je nyní řízeno z JS, ale flex pro centrování zůstává */
+  display: flex; 
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #fff;
   font-size: 1.2rem;
-  backdrop-filter: blur(5px);
 }
 
 #loadingOverlay .spinner {
@@ -777,5 +782,80 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+/* ================================================== */
+/* ===== RESPONZIVNÍ MODÁLNÍ OKNO (PROFILES) ===== */
+/* ================================================== */
+
+/* --- Styly pro formulář se segmenty (náhrada za tabulku) --- */
+.segments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.segment-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+.segment-input-group {
+  flex: 1;
+  min-width: 60px;
+}
+.segment-input-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  display: block;
+  margin: 0 0 0.3rem 0;
+}
+.segment-input-group input {
+  width: 100%;
+}
+.segment-action-group {
+  flex-shrink: 0;
+}
+
+/* --- Media Query pro mobilní zařízení --- */
+@media (max-width: 980px) {
+
+  /* 1. Základní nastavení modálu pro mobily */
+  .modal .modal-content {
+    /* Modál zabere téměř celou šířku, ale max 500px na tabletech */
+    width: min(95vw, 500px);
+    padding: var(--pad);
+  }
+
+  /* 2. Dvousloupcový layout se změní na jednosloupcový (již možná máte) */
+  .modal .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  /* 3. Úprava výšek grafu a textového pole */
+  .modal .chart-wrap {
+    height: 250px; /* Menší, ale stále čitelná výška */
+    margin-bottom: 1rem;
+  }
+  .modal #gcodeOutput {
+    height: 200px;
+  }
+
+  /* 4. Tlačítka "Uložit/Zrušit" dáme pod sebe pro snazší ovládání */
+  .modal .actions-right {
+    display: flex;
+    flex-direction: column; /* Tlačítka pod sebou */
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  .modal .actions-right .btn {
+    width: 100%; /* Tlačítka na plnou šířku */
+  }
+
+  /* 5. Řádek se segmenty se na velmi úzkých obrazovkách "zalomí" */
+  .segment-row {
+    flex-wrap: wrap;
   }
 }

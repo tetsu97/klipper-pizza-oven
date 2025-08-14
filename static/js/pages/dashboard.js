@@ -133,9 +133,14 @@ function bindUpload() {
 
         const text = await file.text();
         try {
-            const resp = await fetch("/api/save_gcode", {
+            const payload = {
+              name: file.name,
+              gcode: text,
+              overwrite: true
+            };
+            const resp = await fetch("/api/gcodes/save", {
                 method: "POST", headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ filename: file.name, gcode: text })
+                body: JSON.stringify(payload)
             });
             if (!resp.ok) {
               const error = await resp.text();
@@ -147,21 +152,6 @@ function bindUpload() {
             Toast.show("Nahrávání selhalo: " + e.message, 'error');
         } finally {
             inp.value = "";
-        }
-    });
-}
-
-function bindDashEmergencyButtons() {
-    const fw = document.getElementById('btnFwRestart');
-    const es = document.getElementById('btnEStop');
-    if (fw) fw.addEventListener('click', () => {
-        if (confirm('Restart Klipper firmware now?\n(This will stop any running job.)')) {
-            sendGcode('FIRMWARE_RESTART');
-        }
-    });
-    if (es) es.addEventListener('click', () => {
-        if (confirm('EMERGENCY STOP?\nThis immediately halts the machine.')) {
-            sendGcode('M112');
         }
     });
 }
@@ -320,20 +310,34 @@ document.addEventListener('klipper-gcode-response', (event) => {
 // =============================================
 // ČÁST 4: INICIALIZACE STRÁNKY
 // =============================================
+// /static/js/pages/dashboard.js
 function init() {
     $("#dashPause")?.addEventListener("click", () => sendGcode("PAUSE"));
     $("#dashResume")?.addEventListener("click", () => sendGcode("RESUME"));
     $("#dashCancel")?.addEventListener("click", () => {
-        if (confirm("Opravdu chcete zrušit aktuální proces?")) { sendGcode("CANCEL_PRINT"); }
+        if (confirm("Opravdu chcete zrušit aktuální proces?")) {
+            sendGcode("CANCEL_PRINT");
+        }
     });
-    bindDashEmergencyButtons();
+
+    $("#btnFwRestart")?.addEventListener("click", () => handleFirmwareRestart());
+    $("#btnEStop")?.addEventListener("click", () => handleEmergencyStop());
+
+    // Navázání konzole
     $("#dashConsoleSend")?.addEventListener("click", () => {
         const input = $("#dashConsoleInput");
-        if (input && input.value) { sendGcode(input.value); input.value = ""; }
+        if (input && input.value) {
+            sendGcode(input.value);
+            input.value = "";
+        }
     });
     $("#dashConsoleInput")?.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") { $("#dashConsoleSend")?.click(); e.preventDefault(); }
+        if (e.key === "Enter") {
+            $("#dashConsoleSend")?.click();
+            e.preventDefault();
+        }
     });
+    
     $("#dashClearStateBtn")?.addEventListener("click", () => {
         $("#dashJobDetail").hidden = true;
         lastActiveFile = null;
@@ -341,6 +345,8 @@ function init() {
         sendGcode('SDCARD_RESET_FILE');
         refreshRecentFiles();
     });
+
+    // Spuštění úvodních funkcí
     bindUpload();
     refreshRecentFiles();
 }

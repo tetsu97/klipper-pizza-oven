@@ -171,7 +171,7 @@
         cmCreate = window.CodeMirror.fromTextArea(ta, {
           lineNumbers: true,
           theme: 'material-darker',
-          mode: 'properties',      // nebo 'klipper' pokud ho máš
+          mode: 'klipper',      // nebo 'klipper' pokud ho máš
           viewportMargin: Infinity,
           lineWrapping: true,
           indentUnit: 2,
@@ -293,7 +293,7 @@
       cm = window.CodeMirror.fromTextArea(ta, {
         lineNumbers: true,
         theme: 'material-darker',
-        mode: 'properties',          // nebo 'klipper', pokud máš mode
+        mode: 'klipper',          // nebo 'klipper', pokud máš mode
         viewportMargin: Infinity,
         lineWrapping: true,
         indentUnit: 2,
@@ -375,6 +375,7 @@
   async function refreshUpdates() {
     const tb = $('#updateTable tbody');
     if (!tb) return;
+    showLoadingOverlay('Načítám stav aktualizací...');
 
     tb.innerHTML = '<tr><td colspan="5" style="text-align:center;opacity:.7;">Loading…</td></tr>';
 
@@ -455,7 +456,9 @@
           b.disabled = false;
         }
       };
+      hideLoadingOverlay();
     } catch (e) {
+      hideLoadingOverlay();
       console.error(e);
       tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#f55;">Failed to load.</td></tr>';
     }
