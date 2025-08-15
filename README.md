@@ -36,6 +36,8 @@ This project is actively developed. Here are some of the features and improvemen
 
 * Job History: Log and review past cycles, including a chart of the actual temperature curve.
 
+* Simplified Installation: Create an installation script and package the application as a Moonraker extension for easy setup.
+
 * Theme Switching: Implement a light theme and a high-contrast mode.
 
 * And much more...
