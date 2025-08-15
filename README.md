@@ -4,7 +4,7 @@
 ![GitHub forks](https://img.shields.io/github/forks/tetsu97/klipper-pizza-oven?style=social)
 ![License](https://img.shields.io/github/license/tetsu97/klipper-pizza-oven)
 
-A modern, responsive, and user-friendly web interface for controlling a 3D printer with Klipper firmware, specially adapted for drying and annealing filaments or for use as a "pizza oven".
+A modern, responsive, and user-friendly web interface for controlling a DIY Oven with Klipper firmware, specially adapted for annealing 3D printed parts and drying filaments or for use as a "pizza oven".
 
 The application is built on a **FastAPI** backend and communicates with Klipper via the **Moonraker API**.
 
