@@ -28,6 +28,18 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 
 ---
 
+## 🚀 Roadmap & Future Plans
+
+This project is actively developed. Here are some of the features and improvements planned for the future:
+
+* Language Localization: Add support for multiple languages (e.g., German, Czech).
+
+* Theme Switching: Implement a light theme and a high-contrast mode.
+
+* And much more...
+
+---
+
 ## 🛠️ Tech Stack
 
 * **Backend:** Python 3, FastAPI, Uvicorn, Jinja2
