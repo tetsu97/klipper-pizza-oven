@@ -18,8 +18,8 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 
 ## ✨ Key Features
 
-* **🖥️ Clean Dashboard:** Monitor temperature, program progress, and G-code preview in real-time, and control your printer.
-* **📂 Profile Management:** Create, edit, and manage profiles for filament drying and annealing.
+* **🖥️ Clean Dashboard:** Monitor temperature, program progress, and G-code preview in real-time, and control your oven.
+* **📂 Profile Management:** Create, edit, and manage profiles for annealing and filament drying.
 * **📊 G-code Generator:** Easily generate G-code based on temperature segments or a fixed temperature and time.
 * **📈 Interactive Charts:** Get a visual preview of the temperature curve during profile creation and program execution.
 * **⌨️ Terminal & Console:** Send G-code commands directly to Klipper and view the responses in real-time.
