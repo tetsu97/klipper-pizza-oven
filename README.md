@@ -34,6 +34,8 @@ This project is actively developed. Here are some of the features and improvemen
 
 * Language Localization: Add support for multiple languages (e.g., German, Czech).
 
+* Job History: Log and review past cycles, including a chart of the actual temperature curve.
+
 * Theme Switching: Implement a light theme and a high-contrast mode.
 
 * And much more...
@@ -67,7 +69,7 @@ If you like this project and find it useful, please consider supporting me. A sm
 
 
 <div align="center">
-<a href="https-ko--fi-com-tetsu97.proxy.goog/B0B4A4V7X](https://ko-fi.com/tetsu97" target="_blank">
+<a href="https://ko-fi.com/tetsu97" target="_blank">
 <img src="https://storage.ko-fi.com/cdn/opengraph_assets/default_creator_og/hz_profile_page.png" alt="Buy Me a Coffee at ko-fi.com" style="height: 150px !important; width: auto !important;">
 </a>
 </div>
