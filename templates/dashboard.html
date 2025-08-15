@@ -62,14 +62,13 @@
       <!-- Temps -->
       <section class="dash-card" id="dashTempsCard">
         <div class="dash-card-head"><h3>Temperature</h3></div>
-        <div class="dash-temps-layout">
-          <table class="temps">
-            <thead><tr><th>Sensor</th><th>Actual</th><th>Target</th></tr></thead>
-            <tbody id="dashTempsTable"></tbody>
-          </table>
-          <div class="chart-wrap">
-            <canvas id="dashTempChart"></canvas>
-          </div>
+        <!-- ZMĚNA: Odstraněn div.dash-temps-layout a tabulka s grafem jsou nyní přímo v sekci -->
+        <table class="temps" style="margin-bottom: 1rem;">
+          <thead><tr><th>Sensor</th><th>Actual</th><th>Target</th></tr></thead>
+          <tbody id="dashTempsTable"></tbody>
+        </table>
+        <div class="chart-wrap">
+          <canvas id="dashTempChart"></canvas>
         </div>
       </section>
 

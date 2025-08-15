@@ -25,7 +25,7 @@
     <tbody></tbody>
   </table>
 
-  <!-- ============ JEDINÝ UNIVERZÁLNÍ MODÁL PRO EDITACI A TVORBU ============ -->
+  <!-- ============ JEDINÝ UNIVERZÁLNÍ MODÁL PRO EDITACI A TVORBU (RESPONZIVNÍ) ============ -->
   <div id="profileEditorModal" class="modal" style="display:none;">
     <div class="modal-content">
       <div class="row space-between align">
@@ -46,11 +46,13 @@
 
             <label for="filamentType">Filament Type (optional):</label>
             <input type="text" id="filamentType" placeholder="PC-CF, ABS-CF...">
-
+            
             <div id="annealingInputs">
               <h3 style="margin:.8rem 0 .4rem;">Segments</h3>
+              <!-- ZMĚNA: Původní <table> nahrazeno za <div> pro lepší responzivitu -->
               <div id="segmentsList" class="segments-list">
-                </div>
+                <!-- Segmenty budou dynamicky vkládány sem pomocí JS -->
+              </div>
               <div class="centered-row">
                 <button id="addSegmentBtn" class="btn">Add Segment</button>
               </div>

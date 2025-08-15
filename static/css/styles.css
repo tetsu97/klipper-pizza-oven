@@ -94,8 +94,7 @@ select.macro-select:hover, select.macro-select:focus{ border-color: var(--brand)
 /* =================================== */
 
 button,
-.btn { /* Přidáme i třídu .btn pro případ, že bychom chtěli ostylovat odkaz jako tlačítko */
-  /* Základní vzhled */
+.btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -106,21 +105,13 @@ button,
   font-weight: 600;
   line-height: 1.4;
   text-align: center;
-  
-  /* Chování */
   cursor: pointer;
   user-select: none;
   transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-  
-  /* Výchozí barvy (neutrální/sekundární tlačítko) */
   background-color: #293159;
   border-color: #3b457a;
   color: #dbe2ff;
-
-  /* Responzivita pro dotyk */
   min-height: 44px;
-
-  /* DŮLEŽITÉ: Odstranili jsme margin, ten by měl řešit layout, ne tlačítko samotné */
   margin: 0;
 }
 
@@ -136,12 +127,9 @@ button:focus,
   outline-offset: 2px;
 }
 
-/* -- Varianty tlačítek -- */
-
-/* Primární tlačítko (výrazné) */
 button.btn--primary,
 .btn.btn--primary {
-  background-color: #5b86ff; /* Modrá */
+  background-color: #5b86ff;
   border-color: #5b86ff;
   color: #fff;
 }
@@ -151,10 +139,9 @@ button.btn--primary:hover,
   border-color: #739dff;
 }
 
-/* Nebezpečné tlačítko (červené) - tvůj původní styl */
 button.btn--danger,
 .btn.btn--danger {
-  background-color: #d32f2f; /* Červená */
+  background-color: #d32f2f;
   border-color: #d32f2f;
   color: #fff;
 }
@@ -165,8 +152,6 @@ button.btn--danger:hover,
 }
 
 /* ===== Tables ===== */
-
-
 table{ width:100%; border-collapse:separate; border-spacing:0; margin-top:1rem; background:#1e2135; border-radius:12px; padding:8px; }
 thead tr th{ background:transparent; padding:6px 8px; text-align:center; color:#ccc; user-select:none; font-weight:700; }
 tbody tr td{ background:transparent; border:0; padding:6px 8px; vertical-align:middle; }
@@ -174,21 +159,15 @@ tbody tr td{ background:transparent; border:0; padding:6px 8px; vertical-align:m
 .name-cell .gthumb{ width: 48px; height: 48px; border-radius: 8px; background: #0e1022; border: 1px solid #2a2f55; object-fit: cover; flex-shrink: 0; transition: opacity .15s ease; opacity: 1; }
 
 .fname {
-  /* Povolí zalamování na mezerách i uvnitř dlouhých slov */
   white-space: normal;
   word-break: break-all;
-  
-  /* Zruší případné ořezávání textu */
   overflow: visible;
   text-overflow: clip;
-  
-  /* Další vlastnosti pro správné zobrazení */
-  max-width: 100%; /* Zajistí, že se prvek neroztáhne mimo buňku */
+  max-width: 100%;
   display: inline-block;
   vertical-align: middle;
 }
 
-/* Action buňky – sjednocené (Machine, Profiles, Dashboard files) */
 #machineTable td:last-child,
 #profilesTable td:last-child,
 #dashFileList td:last-child{
@@ -236,7 +215,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   font-family: ui-monospace,Consolas,monospace;
 }
 
-/* Console input + Send – robustní grid */
 #consolePanel .console-input{
   display:grid; grid-template-columns:1fr auto; align-items:center; gap:8px;
 }
@@ -245,7 +223,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   height:36px !important; margin-top:0 !important; line-height:1; padding:.4rem .7rem;
 }
 
-/* Dashboard mini console – sjednocení výšky */
 .dash-console-input{ display:flex; gap:8px; align-items:center; }
 .dash-console-input input, .dash-console-input button{ height:36px; }
 .dash-console-input button{ margin-top:0; }
@@ -262,7 +239,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 }
 .modal.hidden{ display:none !important; }
 
-/* BEM modal (create file) – necháváme kvůli existujícím šablonám */
 .modal__backdrop{ position:absolute; inset:0; background: rgba(0,0,0,.5); }
 .modal__dialog{
   position: relative; margin: 5vh auto; max-width: 980px; width: 96%;
@@ -273,16 +249,13 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 .modal__close{ font-size:20px; line-height:1; background:transparent; border:0; cursor:pointer; color:#fff; }
 .modal__body{ max-height:75dvh; overflow:auto; }
 
-/* Grid uvnitř modalů */
 .modal .two-col{ display:grid !important; grid-template-columns:1fr 1fr; gap:var(--gap); }
 @media (max-width:1000px){ .modal .two-col{ grid-template-columns:1fr; } }
 
-/* Pojistky proti přetekání */
 .chart-wrap{ height:280px; max-width:100%; }
 #chart, #editPointsChart{ width:100% !important; height:auto !important; }
 #gcodeOutput{ width:100%; box-sizing:border-box; }
 
-/* CodeMirror – sjednoceno */
 #editFileModal .CodeMirror,
 #createFileModal .CodeMirror{
   background:#0f1124; color:#e6e9ff; border:1px solid #242a4f; border-radius:10px;
@@ -295,7 +268,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 .cm-s-material-darker .CodeMirror-cursor{ border-left:2px solid #f44336; }
 .cm-s-material-darker .CodeMirror-selected{ background:rgba(91,134,255,.25) !important; }
 
-/* Machine toolbar helper */
 .machine-toolbar{ display:flex; align-items:center; gap:.75rem; }
 
 /* ===== Sidebar brand (3 styly) ===== */
@@ -306,20 +278,17 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 .brand-main{ display:block; font-weight:900; font-size:26px; letter-spacing:0 }
 .brand-sub { display:block; font-weight:700; font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:#cfd3e0 }
 
-/* --- 1) STACK + ACCENT (doporučeno) --- */
 .brand--stack .brand-main::after{
   content:""; display:block; height:3px; border-radius:2px; margin-top:4px;
   background: linear-gradient(90deg, #5b86ff, #f44336);
 }
 .brand--stack .brand-sub{ text-align:right; margin-top:6px; }
 
-/* --- 2) PILL (hlavička v pilulce) --- */
 .brand--pill .brand-main{
   background:#f44336; color:#fff; padding:2px 10px; border-radius:8px;
 }
 .brand--pill .brand-sub{ margin-top:6px; color:#d7daea; }
 
-/* --- 3) BAR LEFT (svislý proužek vlevo) --- */
 .brand--bar{
   position:relative; padding-left:10px;
 }
@@ -329,42 +298,24 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 }
 .brand--bar .brand-sub{ margin-top:4px; color:#d7daea; }
 
-/* drobné přizpůsobení na mobilech */
 @media (max-width:980px){
   .brand-main{ font-size:24px }
   .brand-sub { font-size:13px }
 }
 
-/* Sidebar brand: centrovat celý blok */
 .sidebar h1.brand{
-  margin: 0 auto 1rem;     /* auto okraje → střed */
-  text-align: center;      /* zarovnat text uvnitř */
-  width: fit-content;      /* zůstává kompaktní */
+  margin: 0 auto 1rem;
+  text-align: center;
+  width: fit-content;
 }
 
-/* U stack varianty centrovat i druhý řádek + linku pod ním */
 .brand--stack .brand-sub{ text-align: center; }
 .brand--stack .brand-main::after{
-  margin: 4px auto 0;      /* linka uprostřed */
-  /* volitelné: zúžit linku, ať vypadá jemněji */
-  /* width: 80%; */
+  margin: 4px auto 0;
 }
 
-/* === Temperature: stop overlap once and for all === */
-#dashTempsCard .dash-temps-layout{
-  display: grid;
-  grid-template-columns: minmax(220px, 280px) 1fr; /* tabulka vlevo, graf vpravo */
-  gap: 12px;
-  align-items: start;
-}
-@media (max-width: 900px){
-  #dashTempsCard .dash-temps-layout{ grid-template-columns: 1fr; }
-}
+/* ZMĚNA: Odstraněna pravidla pro .dash-temps-layout */
 
-/* ← důležité: aby se děti gridu nesnažily tlačit širší než kolona */
-#dashTempsCard .dash-temps-layout > *{ min-width: 0; }
-
-/* tabulka = stabilní šířky + případné zalomení */
 #dashTempsCard .temps{
   width: 100%;
   table-layout: fixed;
@@ -376,21 +327,19 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   word-break: break-word;
 }
 
-/* graf: canvas je přesně vysoký jako kontejner, nic nepřeteče */
 #dashTempsCard .chart-wrap{
   height: clamp(240px, 34vh, 320px);
   background:#10132a; border:1px solid #242a4f; border-radius:10px; padding:6px;
   position: relative;
-  overflow: hidden;                 /* usekni vše mimo box */
-  contain: layout paint;            /* vlastní „mini-layout“ → stabilnější */
+  overflow: hidden;
+  contain: layout paint;
 }
 #dashTempChart{
   display:block;
   width:100% !important;
-  height:100% !important;           /* přepíše globální canvas height:auto */
+  height:100% !important;
 }
 
-/* Profiles – název se thumbnailem */
 #profilesTable .name-cell{
   display: flex;
   align-items: center;
@@ -402,60 +351,52 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   border-radius: 8px;
   background: #0e1022;
   border: 1px solid #2a2f55;
-  object-fit: cover;        /* square crop */
+  object-fit: cover;
   flex: 0 0 auto;
   transition: opacity .15s ease;
-  opacity: .0;              /* zobrazí se po načtení */
+  opacity: .0;
 }
-/* ===== Table action buttons: vertical + horizontal align ===== */
 
-/* Akční sloupec – flex zarovnání doprostřed */
 #profilesTable td.btns,
 #machineTable  td.btns {
   display: flex;
-  align-items: center;   /* vertikální zarovnání */
+  align-items: center;
   justify-content: center;
   gap: 8px;
-  white-space: nowrap;   /* tlačítka zůstanou na řádku */
+  white-space: nowrap;
 }
 
-/* Vypnout globální margin-top u tlačítek v tabulkách */
 #profilesTable td.btns button,
 #machineTable  td.btns button {
   margin-top: 0;
 }
 
-/* Sjednocená výška / padding / zarovnání obsahu */
 #profilesTable td.btns button,
 #machineTable  td.btns button {
   height: 32px;
-  line-height: 32px;     /* fallback pro ne-flex render */
+  line-height: 32px;
   padding: 0 10px;
-  display: inline-flex;  /* spolehlivé centrování textu */
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Pro jistotu srovnat vertikální zarovnání buněk v řádku */
 #profilesTable tbody tr td,
 #machineTable  tbody tr td {
   vertical-align: middle;
 }
 
-/* (Volitelné) Zmenšení mezer, když je v řádku málo místa */
 @media (max-width: 700px) {
   #profilesTable td.btns,
   #machineTable  td.btns { gap: 6px; }
 }
-/* Profiles: zarovnání akčních tlačítek ve sloupci */
 #profilesTable td.btns{
-  display: table-cell !important;   /* zruší dřívější flex */
-  vertical-align: middle;           /* centrovat obsah v rámci řádku */
-  padding-top: 6px;                 /* stejné jako ostatní buňky */
+  display: table-cell !important;
+  vertical-align: middle;
+  padding-top: 6px;
   padding-bottom: 6px;
 }
 
-/* Wrapper uvnitř buňky – horizontální řazení + centrování */
 #profilesTable td.btns .btns-wrap{
   display: inline-flex;
   align-items: center;
@@ -463,7 +404,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   gap: 8px;
 }
 
-/* Jednotná výška / zrušit globální margin-top v tabulce */
 #profilesTable td.btns .btns-wrap button{
   margin-top: 0;
   height: 32px;
@@ -474,21 +414,17 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   justify-content: center;
 }
 
-/* Pro jistotu centrovat celý řádek vertikálně */
 #profilesTable tbody tr td{ vertical-align: middle; }
 
-/* (Volitelné) sjednocená minimální výška řádku, aby ladila s 48px thumbnail */
-#profilesTable tbody tr{ min-height: 60px; }  /* 48px thumb + padding */
+#profilesTable tbody tr{ min-height: 60px; }
 
-/* ===== Unified status bar layout (left/center/right) ===== */
 .ovenStatusPanel .os-bar{
   display: grid;
-  grid-template-columns: 1fr auto 1fr;  /* left | center | right */
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 12px;
 }
 
-/* podsložky */
 .ovenStatusPanel .os-left{
   display:flex; align-items:center; gap:10px; justify-self:start;
 }
@@ -499,7 +435,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   display:flex; align-items:center; gap:8px; justify-self:end;
 }
 
-/* tlačítka vpravo: stejné jako jinde, bez margin-top */
 .ovenStatusPanel .os-right button{
   margin-top: 0;
   height: 32px;
@@ -510,7 +445,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   justify-content: center;
 }
 
-/* progress bar přes celou šířku, dole */
 .ovenStatusPanel .os-progress{
   height:6px; background:#252c52; border-radius:999px; overflow:hidden; margin-top:8px;
 }
@@ -518,22 +452,21 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   height:100%; background:#5b86ff; width:0%; transition:width .2s;
 }
 
-/* responsivní stack */
 @media (max-width: 900px){
   .ovenStatusPanel .os-bar{
-    grid-template-columns: 1fr;      /* nad sebe */
+    grid-template-columns: 1fr;
     gap: 8px;
   }
   .ovenStatusPanel .os-left,
   .ovenStatusPanel .os-center,
   .ovenStatusPanel .os-right{
-    justify-self: start;              /* zarovnat vlevo na úzkých displejích */
+    justify-self: start;
   }
 }
-/* === Unified Firmware Restart / Emergency Stop buttons (global) === */
+
 #btnFwRestart, #osFwRestart,
 #btnEStop,    #osEStop {
-  margin-top: 0;                 /* přebije globální margin-top */
+  margin-top: 0;
   height: 32px;
   line-height: 32px;
   padding: 0 12px;
@@ -544,7 +477,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   font-weight: 600;
 }
 
-/* Firmware restart: modrý "pill" s jemným okrajem */
 #btnFwRestart, #osFwRestart {
   background: #293159;
   border: 1px solid #3b457a;
@@ -552,7 +484,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 }
 #btnFwRestart:hover, #osFwRestart:hover { background: #34407a; }
 
-/* Emergency stop: výrazně červené */
 #btnEStop, #osEStop {
   background: #d32f2f;
   border: 0;
@@ -560,19 +491,14 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 }
 #btnEStop:hover, #osEStop:hover { background: #b71c1c; }
 
-/* Přátelský focus */
 #btnFwRestart:focus, #osFwRestart:focus,
 #btnEStop:focus,    #osEStop:focus {
   outline: 2px solid #5b86ff;
   outline-offset: 2px;
 }
 
-/* Konzistentní mezera vpravo ve status baru */
 .ovenStatusPanel .os-right { gap: 8px; }
 
-/* -- Nové styly pro kontextové menu a tabulky -- */
-
-/* Zvýraznění řádku po najetí myší */
 .clickable-row {
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -581,10 +507,9 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   background-color: rgba(91, 134, 255, 0.15);
 }
 
-/* Kontextové menu */
 .context-menu {
-  display: none; /* Standardně skryté */
-  position: absolute; /* Pozicujeme ho vůči stránce */
+  display: none;
+  position: absolute;
   z-index: 1000;
   width: 160px;
   background-color: #2a2a40;
@@ -605,101 +530,12 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   padding: 8px 12px;
   color: #eaeaea;
   border-radius: 4px;
-  margin: 0; /* Vynulujeme globální margin */
+  margin: 0;
 }
 
 .context-menu button:hover {
   background-color: #5b86ff;
   color: #fff;
-}
-
-/* =================================== */
-/* ===== RESPONZIVNÍ ÚPRAVY PRO MOBIL ===== */
-/* =================================== */
-
-@media (max-width: 980px){
-  .sidebar-toggle{ display:inline-block; }
-  .sidebar{ position:fixed; inset:0 auto 0 0; height:100dvh; z-index:1000; transform: translateX(-100%); transition: transform .3s ease; }
-  .sidebar.open{ transform: translateX(0); }
-  .main, .panel{ padding: var(--pad); }
-  .two-col, .machine-grid { grid-template-columns: 1fr; }
-
-}
-
-@media (max-width: 768px) {
-  /* --- Responzivní tabulky --- */
-  .responsive-table thead { display: none; }
-  .responsive-table tr { display: block; margin-bottom: 1.25rem; border-radius: 8px; border: 1px solid #262a45; background: #171a2e; padding: 0.5rem; }
-  .responsive-table td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 0.75rem 0.5rem; border-bottom: 1px solid #2a2a40; }
-  .responsive-table tr td:last-of-type { border-bottom: none; }
-  .responsive-table td::before { content: attr(data-label); font-weight: bold; text-align: left; color: #aeb8d3; margin-right: 1rem; }
-  .responsive-table .name-cell { display: block; text-align: left; }
-  .responsive-table .name-cell::before { display: none; }
-
-  .fname {
-    /* Rušíme pravidla, která bránila zalamování */
-    white-space: normal; /* Povolí zalamování na mezerách */
-    overflow: visible;
-    text-overflow: clip;
-    max-width: none; /* Povolíme plnou šířku buňky */
-    
-    /* A přidáme zalamování slov, pokud je to nutné */
-    word-break: break-all;
-    
-    /* Zachováme původní vlastnosti */
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-.responsive-table .name-cell .gthumb {
-  display: none;
-}
-
-  /* Zvětšíme důležitá tlačítka pro snadnější dotyk */
-  .modal-content button, #profilesRefreshBtn, #openGeneratorBtn, .dash-actions button, #updRefreshBtn, #updAllBtn, #openCreateFileBtn {
-    min-height: 44px; padding: 10px 16px; font-size: 1rem;
-  }
-    /* --- Responzivní modální okna (Profiles) --- */
-
-  /* Zajistíme, aby obsah modálu lépe využil prostor na mobilu */
-  .modal .modal-content {
-    padding: 1rem;
-    /* Na mobilu zabere skoro celou šířku, na tabletu bude mít max 500px */
-    width: min(95vw, 500px); 
-  }
-
-  /* Dvousloupcový layout se spolehlivě změní na jednosloupcový */
-  .modal .two-col {
-    grid-template-columns: 1fr;
-  }
-
-  /* Upravíme výšku grafu a textové oblasti pro vertikální layout */
-  .modal .chart-wrap {
-    height: 250px; /* Menší, ale stále čitelná výška */
-    margin-bottom: 1rem;
-  }
-
-  .modal #gcodeOutput {
-    height: 200px; /* Menší výška pro G-kód */
-  }
-
-  /* Tlačítka v generátoru (Annealing/Drying) dáme pod sebe */
-  #generatorModal .row.gap-small {
-    flex-direction: column;
-  }
-
-  /* Tlačítka akcí na konci modálu */
-  .modal .actions-right {
-    display: flex;
-    flex-direction: column; /* Tlačítka pod sebou pro snadnější klepnutí */
-    gap: 0.75rem;
-    margin-top: 1.5rem;
-  }
-
-  .modal .actions-right button {
-    width: 100%; /* Tlačítka na plnou šířku */
-    margin-right: 0; /* Zrušíme případné pravé odsazení */
-  }
 }
 
 /* =================================== */
@@ -726,7 +562,7 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.1);
   opacity: 0;
-  transform: translateY(-50px); /* Animace shora dolů */
+  transform: translateY(-50px);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
@@ -735,7 +571,6 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   transform: translateY(0);
 }
 
-/* Barevné varianty (zůstávají stejné) */
 .toast--success {
   background-color: #1f3a2e;
   border-left: 5px solid #5bd08c;
@@ -756,11 +591,9 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh; /* 'vh' je spolehlivější na mobilech */
+  height: 100vh;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(5px);
-  
-  /* display je nyní řízeno z JS, ale flex pro centrování zůstává */
   display: flex; 
   flex-direction: column;
   align-items: center;
@@ -785,15 +618,12 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   }
 }
 
-/* ================================================== */
-/* ===== RESPONZIVNÍ MODÁLNÍ OKNO (PROFILES) ===== */
-/* ================================================== */
-
-/* --- Styly pro formulář se segmenty (náhrada za tabulku) --- */
+/* ===== PROFILOVÉ SEGMENTY (CREATE/EDIT MODAL) ===== */
+/* Toto jsou výchozí (desktop) styly */
 .segments-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem; /* Menší mezera mezi řádky na desktopu */
   margin-bottom: 1rem;
 }
 .segment-row {
@@ -802,11 +632,10 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   gap: 0.75rem;
 }
 .segment-input-group {
-  flex: 1;
-  min-width: 60px;
+  flex: 1; /* Všechny 3 sloupce s inputy budou stejně široké */
 }
 .segment-input-group label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--muted);
   display: block;
@@ -816,46 +645,101 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   width: 100%;
 }
 .segment-action-group {
-  flex-shrink: 0;
+  flex-shrink: 0; /* Tlačítko se nebude zmenšovat */
+}
+.segment-action-group .btn {
+    padding: 8px 12px;
+    min-height: 0;
+    line-height: 1;
 }
 
-/* --- Media Query pro mobilní zařízení --- */
+/* ================================================== */
+/* ===== RESPONZIVNÍ ÚPRAVY (ZAČÁTEK) ===== */
+/* ================================================== */
+
 @media (max-width: 980px) {
 
-  /* 1. Základní nastavení modálu pro mobily */
+  /* --- Obecné layouty --- */
+  .sidebar-toggle{ display:inline-block; }
+  .sidebar{ position:fixed; inset:0 auto 0 0; height:100dvh; z-index:1000; transform: translateX(-100%); transition: transform .3s ease; }
+  .sidebar.open{ transform: translateX(0); }
+  .main, .panel{ padding: var(--pad); }
+  .two-col, .machine-grid { grid-template-columns: 1fr; }
+
+  /* --- Responzivní tabulky --- */
+  .responsive-table thead { display: none; }
+  .responsive-table tr { display: block; margin-bottom: 1.25rem; border-radius: 8px; border: 1px solid #262a45; background: #171a2e; padding: 0.5rem; }
+  .responsive-table td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 0.75rem 0.5rem; border-bottom: 1px solid #2a2a40; }
+  .responsive-table tr td:last-of-type { border-bottom: none; }
+  .responsive-table td::before { content: attr(data-label); font-weight: bold; text-align: left; color: #aeb8d3; margin-right: 1rem; }
+  .responsive-table .name-cell { display: block; text-align: left; }
+  .responsive-table .name-cell::before { display: none; }
+  .responsive-table .name-cell .gthumb { display: none; }
+
+  .fname {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    max-width: none;
+    word-break: break-all;
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  /* --- Responzivní modální okna --- */
   .modal .modal-content {
-    /* Modál zabere téměř celou šířku, ale max 500px na tabletech */
     width: min(95vw, 500px);
     padding: var(--pad);
   }
 
-  /* 2. Dvousloupcový layout se změní na jednosloupcový (již možná máte) */
+  .modal .modal-content .row.space-between.align {
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .modal #editorTitle {
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+  .modal #editorCloseBtn {
+    flex-shrink: 0;
+  }
+
   .modal .two-col {
     grid-template-columns: 1fr;
   }
 
-  /* 3. Úprava výšek grafu a textového pole */
   .modal .chart-wrap {
-    height: 250px; /* Menší, ale stále čitelná výška */
+    height: 250px;
     margin-bottom: 1rem;
   }
   .modal #gcodeOutput {
     height: 200px;
   }
 
-  /* 4. Tlačítka "Uložit/Zrušit" dáme pod sebe pro snazší ovládání */
   .modal .actions-right {
     display: flex;
-    flex-direction: column; /* Tlačítka pod sebou */
+    flex-direction: column;
     gap: 0.75rem;
     margin-top: 1.5rem;
   }
   .modal .actions-right .btn {
-    width: 100%; /* Tlačítka na plnou šířku */
+    width: 100%;
   }
 
-  /* 5. Řádek se segmenty se na velmi úzkých obrazovkách "zalomí" */
+  /* Přizpůsobení segmentů pro mobilní zobrazení */
+  .segments-list {
+    gap: 1rem;
+  }
   .segment-row {
     flex-wrap: wrap;
+    background: var(--page-bg);
+    padding: var(--pad);
+    border-radius: 8px;
+  }
+  .segment-input-group {
+    min-width: 80px;
   }
 }

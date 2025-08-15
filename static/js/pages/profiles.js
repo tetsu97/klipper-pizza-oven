@@ -1,4 +1,4 @@
-// /static/js/pages/profiles.js (FINÁLNÍ OPRAVENÁ VERZE)
+// /static/js/pages/profiles.js (OPRAVENÁ VERZE)
 
 (function () {
   if (!location.pathname.startsWith('/profiles')) return;
@@ -116,6 +116,11 @@
     async download(name){ window.open(`/api/gcodes/download?name=${encodeURIComponent(name)}`,'_blank'); },
     async remove(name){ const r=await fetch(`/api/gcodes?name=${encodeURIComponent(name)}`,{method:'DELETE'}); if(!r.ok) throw new Error('HTTP '+r.status); },
     async load(name){ const r=await fetch(`/api/gcodes/load?name=${encodeURIComponent(name)}`,{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); },
+    async getContent(name) {
+        const r = await fetch(`/api/gcodes/download?name=${encodeURIComponent(name)}`, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+    },
     async generate(payload){
       const r=await fetch('/api/generate_gcode',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)});
       if (!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`); return r.json();
@@ -132,7 +137,6 @@
     open(){ if (this.root){ this.root.style.display='flex'; } }
     close(){ if (this.root){ this.root.style.display='none'; } }
 
-    /** ✅ OPRAVA: Chybějící statická metoda je zpět */
     static lockBackdrop(ids=['profileEditorModal']){
         ids.forEach(id => {
             const m = document.getElementById(id);
@@ -171,49 +175,60 @@
     }
   }
 
-  class SegmentsTable {
-    constructor(tbodySel, onChange){
-      this.tbody = document.querySelector(tbodySel);
+  class SegmentsManager {
+    constructor(containerSel, onChange){
+      this.container = document.querySelector(containerSel);
       this.onChange = onChange;
       this._bind();
     }
     _bind(){
-      if (!this.tbody) return;
-      this.tbody.addEventListener('click', (e)=>{
+      if (!this.container) return;
+      this.container.addEventListener('click', (e)=>{
         const del = e.target.closest('.row-del');
-        if (del){ del.closest('tr')?.remove(); this.onChange?.(); }
+        if (del){ del.closest('.segment-row')?.remove(); this.onChange?.(); }
       });
-      this.tbody.addEventListener('input', ()=> this.onChange?.());
+      this.container.addEventListener('input', ()=> this.onChange?.());
     }
     load(segments){
-      if (!this.tbody) return;
-      this.tbody.innerHTML='';
+      if (!this.container) return;
+      this.container.innerHTML='';
       (segments||[]).forEach(s=>{ this.addRow(s, false); });
     }
     addRow(defaults={}, triggerChange=true) {
-      if (!this.tbody) return;
-      const last = this.tbody.lastElementChild;
-      const lastTo = last ? toInt(last.cells[1].querySelector('input').value, 0) : 0;
-      const lastTemp = last ? toInt(last.cells[2].querySelector('input').value, 20) : 20;
+      if (!this.container) return;
+      const lastRow = this.container.lastElementChild;
+      const lastTo = lastRow ? toInt(lastRow.querySelector('.seg-to').value, 0) : 0;
+      const lastTemp = lastRow ? toInt(lastRow.querySelector('.seg-temp').value, 20) : 20;
 
-      let newTemp = lastTemp + 5;
-      if (newTemp > 120) newTemp = 30;
-      const tr=document.createElement('tr');
-      tr.innerHTML = `
-        <td><input type="number" value="${defaults.from ?? lastTo}" min="0" step="1" style="width:90px"></td>
-        <td><input type="number" value="${defaults.to ?? (lastTo+60)}" min="0" step="1" style="width:90px"></td>
-        <td><input type="number" value="${defaults.temp ?? lastTemp}" min="0" step="1" style="width:90px"></td>
-        <td><button type="button" class="row-del btn--danger" style="padding: 4px 8px; min-height: 0;">X</button></td>`;
-      this.tbody.appendChild(tr);
+      const row = document.createElement('div');
+      row.className = 'segment-row';
+      row.innerHTML = `
+        <div class="segment-input-group">
+          <label>From (min)</label>
+          <input type="number" class="seg-from" value="${defaults.from ?? lastTo}" min="0" step="1">
+        </div>
+        <div class="segment-input-group">
+          <label>To (min)</label>
+          <input type="number" class="seg-to" value="${defaults.to ?? (lastTo + 60)}" min="0" step="1">
+        </div>
+        <div class="segment-input-group">
+          <label>Temp (°C)</label>
+          <input type="number" class="seg-temp" value="${defaults.temp ?? lastTemp}" min="0" step="1">
+        </div>
+        <div class="segment-action-group">
+          <button type="button" class="row-del btn btn--danger">X</button>
+        </div>
+      `;
+      this.container.appendChild(row);
       if (triggerChange) this.onChange?.();
     }
     read(){
-      if (!this.tbody) return [];
+      if (!this.container) return [];
       const segs = [];
-      this.tbody.querySelectorAll('tr').forEach(tr=>{
-        const from = toInt(tr.cells[0].querySelector('input').value);
-        const to   = toInt(tr.cells[1].querySelector('input').value);
-        const temp = toInt(tr.cells[2].querySelector('input').value);
+      this.container.querySelectorAll('.segment-row').forEach(row => {
+        const from = toInt(row.querySelector('.seg-from').value);
+        const to   = toInt(row.querySelector('.seg-to').value);
+        const temp = toInt(row.querySelector('.seg-temp').value);
         if (to > from) segs.push({from,to,temp});
       });
       return segs.sort((a,b)=>a.from-b.from);
@@ -228,9 +243,9 @@
   constructor() {
     this.modal = new Modal('profileEditorModal');
     this.chart = new ChartView('#editorChart');
-    this.segTable = new SegmentsTable('#segmentsTable tbody', () => this.onUiChange());
+    this.segManager = new SegmentsManager('#segmentsList', () => this.onUiChange());
     this.state = {};
-    this._reloadCallback = null; // 🔧 přidáno
+    this._reloadCallback = null;
     this._bind();
   }
 
@@ -244,15 +259,34 @@
       $('#btn-annealing')?.addEventListener('click', () => this.setProgramType('annealing'));
       $('#btn-drying')?.addEventListener('click', () => this.setProgramType('drying'));
       $('#addSegmentBtn')?.addEventListener('click', () => this.addSegment());
-      $('#downloadGcodeBtn')?.addEventListener('click', () => this.download());
       $('#editorSaveBtn')?.addEventListener('click', () => this.save());
-      
+      $('#downloadGcodeBtn')?.addEventListener('click', () => this.download());
       $('#programName').addEventListener('input', () => this.onUiChange());
       $('#filamentType').addEventListener('input', () => this.onUiChange());
       $('#dryingTime').addEventListener('input', () => this.onUiChange());
       $('#dryingTemp').addEventListener('input', () => this.onUiChange());
     }
     
+    download() {
+      const gcode = this.state.gcode;
+      if (!gcode) {
+        Toast.show('Není co stáhnout. G-kód je prázdný.', 'error');
+        return;
+      }
+      
+      const filename = this._buildFileName();
+      const blob = new Blob([gcode], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
     openForCreate() {
       this.state = {
         mode: 'create',
@@ -261,7 +295,7 @@
         startTemp: 0,
         programName: 'Nový profil žíhání',
         filamentType: '',
-        segments: [ { from:0, to:60, temp:80 } ],
+        segments: [],
         dryingTime: 300,
         dryingTemp: 60,
         gcode: '',
@@ -273,22 +307,30 @@
 
     async openForEdit(fileName) {
       try {
-        const data = await ProfilesService.load(fileName);
+        const [data, gcodeContent] = await Promise.all([
+            ProfilesService.load(fileName),
+            ProfilesService.getContent(fileName)
+        ]);
+        
+        // ZMĚNA: Správně určíme typ profilu z načtených dat
+        const programType = data.mode || 'annealing';
         const points = data.points || [];
+
         this.state = {
             mode: 'edit',
-            programType: 'annealing',
+            programType: programType,
             currentFile: fileName,
             startTemp: points[0]?.temp ?? 0,
             programName: data.program_name || '',
             filamentType: data.filament_type || '',
-            segments: ProfileMath.pointsToSegments(points),
+            segments: programType === 'annealing' ? ProfileMath.pointsToSegments(points) : [],
+            dryingTime: programType === 'drying' ? data.drying_time || 300 : 300,
+            dryingTemp: programType === 'drying' ? data.drying_temp || 60 : 60,
             originalPoints: points,
-            gcode: '',
+            gcode: gcodeContent || '',
         };
         this.updateUiFromState();
         this.modal.open();
-        this.updateGcodePreview();
       } catch (e) {
         Toast.show(`Nepodařilo se načíst profil: ${e.message}`, 'error');
       }
@@ -300,13 +342,13 @@
     }
     
     addSegment() {
-      this.segTable.addRow({}, true);
+      this.segManager.addRow({}, true);
     }
     
     onUiChange() {
       this.state.programName = $('#programName').value;
       this.state.filamentType = $('#filamentType').value;
-      this.state.segments = this.segTable.read();
+      this.state.segments = this.segManager.read();
       this.state.dryingTime = toInt($('#dryingTime').value);
       this.state.dryingTemp = toInt($('#dryingTemp').value);
       this.updateGcodePreview(false);
@@ -324,37 +366,29 @@
     }
     
     updateUiFromState() {
-      const { mode, programType, programName, filamentType, segments, gcode } = this.state;
+      const { mode, programType, programName, filamentType, segments, dryingTime, dryingTemp, gcode } = this.state;
       const isCreate = mode === 'create';
       const isAnnealing = programType === 'annealing';
-      const cleanSegments = ProfileMath.dedupeSegments(this.state.segments);
-      this.segTable.load(cleanSegments);
+      
+      const cleanSegments = ProfileMath.dedupeSegments(segments);
+      this.segManager.load(cleanSegments);
 
-      $('#editorTitle').textContent = isCreate ? 'Vytvořit Profil' : `Upravit: ${this.state.currentFile}`;
+      $('#editorTitle').textContent = isCreate ? 'Create' : `${this.state.currentFile}`;
       $('#editorModeSwitcher').style.display = isCreate ? 'flex' : 'none';
-      //$('#generatorActions').style.display = isCreate ? 'flex' : 'none';
 
       $('#programName').value = programName;
       $('#filamentType').value = filamentType;
       $('#gcodeOutput').value = gcode;
+      
+      // ZMĚNA: Správně nastavíme hodnoty i pro sušení
+      $('#dryingTime').value = dryingTime;
+      $('#dryingTemp').value = dryingTemp;
 
       $('#annealingInputs').style.display = isAnnealing ? 'block' : 'none';
       $('#dryingInputs').style.display = isAnnealing ? 'none' : 'block';
       $('#btn-annealing').classList.toggle('active', isAnnealing);
       $('#btn-drying').classList.toggle('active', !isAnnealing);
       
-      const uniqueSegments = [];
-      const seen = new Set();
-
-      for (const s of segments) {
-        const key = `${s.from}-${s.to}-${s.temp}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          uniqueSegments.push(s);
-        }
-      }
-      this.segTable.load(uniqueSegments);
-
       if(isAnnealing) {
           this.chart.render(ProfileMath.segmentsToPoints(segments, this.state.startTemp), { dedupe: false });
       } else {
@@ -367,7 +401,7 @@
     }
 
     async updateGcodePreview(showToast = false) {
-      const rawSegments = this.segTable.read();
+      const rawSegments = this.segManager.read();
 
       const payload = {
         program_name: this.state.programName,
@@ -384,7 +418,6 @@
         const res = await ProfilesService.generate(payload);
         let gcode = res.gcode || '';
 
-        // === VLOŽENÍ THUMBNAILU DO G-KÓDU ===
         const canvas = document.querySelector('#editorChart');
         if (canvas) {
           const thumbW = 300, thumbH = 300;
@@ -392,32 +425,20 @@
           tmpCanvas.width = thumbW;
           tmpCanvas.height = thumbH;
           const tmpCtx = tmpCanvas.getContext('2d');
-
-          // Bílé pozadí
           tmpCtx.fillStyle = '#1e1e1e';
           tmpCtx.fillRect(0, 0, thumbW, thumbH);
-
-          // Překreslení canvasu do thumbnailu
           tmpCtx.drawImage(canvas, 0, 0, thumbW, thumbH);
-
-          // Získání PNG jako base64
           const dataUrl = tmpCanvas.toDataURL('image/png');
-          const b64 = dataUrl.split(',')[1]; // odstraníme prefix "data:image/png;base64,"
-
-          // Rozřezání na 76 znakové řádky
+          const b64 = dataUrl.split(',')[1];
           const lines = b64.match(/.{1,76}/g) || [];
           const sizeEstimate = b64.length;
-
           const thumbGcode = [];
           thumbGcode.push(`; thumbnail begin ${thumbW}x${thumbH} ${sizeEstimate}`);
           lines.forEach(line => thumbGcode.push(`; ${line}`));
           thumbGcode.push(`; thumbnail end`);
-
-          // Přidání na začátek G-kódu
           gcode = `${thumbGcode.join('\n')}\n${gcode}`;
         }
 
-        // Uložení do stavu a UI
         this.state.gcode = gcode;
         $('#gcodeOutput').value = this.state.gcode;
 
@@ -456,17 +477,9 @@
         }
         return newName;
     }
-
-    async download() {
-      await this.updateGcodePreview();
-      if (!this.state.gcode) return Toast.show('Nejdříve vygenerujte G-kód.', 'info');
-      const filename = this.state.mode === 'edit' ? this.state.currentFile : this._buildFileName();
-      const blob = new Blob([this.state.gcode], {type:'text/plain'});
-      const a = document.createElement('a'); a.download = filename; a.href = URL.createObjectURL(blob); a.click(); URL.revokeObjectURL(a.href);
-    }
     
     async save() {
-      this.state.segments = this.segTable.read();
+      this.state.segments = this.segManager.read();
       this.state.dryingTime = toInt($('#dryingTime').value);
       this.state.dryingTemp = toInt($('#dryingTemp').value);
 
@@ -485,6 +498,10 @@
       try {
         const r = await ProfilesService.saveToKlipper(filename, this.state.gcode);
         Toast.show('Uloženo jako: ' + r.name, 'success');
+        
+        const blob = new Blob([this.state.gcode], {type:'text/plain'});
+        const a = document.createElement('a'); a.download = filename; a.href = URL.createObjectURL(blob); a.click(); URL.revokeObjectURL(a.href);
+
         this.modal.close();
         if (this._reloadCallback) await this._reloadCallback();
       } catch (e) {
@@ -504,7 +521,7 @@
 
     init() {
       this.editor = new ProfileEditorManager();
-      this.editor.setReloadCallback(() => this.loadList()); // 🔧 nový callback
+      this.editor.setReloadCallback(() => this.loadList());
       this._createContextMenu();
       this.bind();
       this.loadList();
@@ -518,22 +535,27 @@
       if (!tbody) return;
 
       const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
       if (isTouchDevice) {
         tbody.addEventListener('click', (e) => {
-          const row = e.target.closest('tr.clickable-row');
-          if (row) { e.stopPropagation(); this._showContextMenu(e, row.dataset.name); }
+            const row = e.target.closest('tr.clickable-row');
+            if (row) {
+                e.stopPropagation();
+                this._showContextMenu(e, row.dataset.name);
+            }
         });
       } else {
         tbody.addEventListener('click', (e) => {
-          const row = e.target.closest('tr.clickable-row');
-          if (row) ProfilesService.start(row.dataset.name);
+            const row = e.target.closest('tr.clickable-row');
+            if (row) ProfilesService.start(row.dataset.name);
         });
         tbody.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          const row = e.target.closest('tr.clickable-row');
-          if (row) this._showContextMenu(e, row.dataset.name);
+            e.preventDefault();
+            const row = e.target.closest('tr.clickable-row');
+            if (row) this._showContextMenu(e, row.dataset.name);
         });
       }
+      
       document.addEventListener('click', () => this._hideContextMenu());
       Modal.lockBackdrop(['profileEditorModal']);
     },
