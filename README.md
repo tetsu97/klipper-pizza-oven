@@ -10,13 +10,9 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 
 ---
 
-## 📸 Screenshots
-
-*(I recommend inserting a few images of your application here, for example, the dashboard and the profiles page)*
-
-| Dashboard | Profiles |
+| Desktop | Mobile |
 | :---: | :---: |
-| `[Insert Dashboard Image Here]` | `[Insert Profiles Image Here]` |
+| ![Dashboard View](/docs/images/preview1.png) | ![Profiles View](./docs/images/preview2.png) |
 
 ---
 
