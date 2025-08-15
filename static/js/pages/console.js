@@ -1,4 +1,4 @@
-// /static/js/pages/console.js (UPRAVENÁ VERZE)
+// /static/js/pages/console.js (Sjednocená verze)
 
 // --- Pomocné funkce ---
 const $ = (s, c = document) => c.querySelector(s);
@@ -13,78 +13,46 @@ function appendLine(line) {
   const box = $("#consoleLog");
   if (!box) return;
   const div = document.createElement("div");
-  // Přidáme trim(), abychom odstranili případné bílé znaky na konci odpovědi
   div.textContent = (line || "").trim();
   box.appendChild(div);
-  // Omezení počtu řádků v DOM, aby se nezpomaloval prohlížeč
   if (box.children.length > 1000) {
     box.removeChild(box.firstChild);
   }
-  // Vždy odscrollovat dolů
   box.scrollTop = box.scrollHeight;
 }
 
-/**
- * Odešle G-code příkaz přes globální WebSocket.
- * @param {string} script G-code příkaz.
- */
-function sendConsoleCommand(script) {
-  script = (script || "").trim();
-  if (!script) return;
-
-  appendLine(`>>> ${script}`);
-
-  // ✅ POUŽÍVÁME NOVOU GLOBÁLNÍ FUNKCI z app.js
-  // Globální 'sendGcode' je definována v app.js a je dostupná všude.
-  if (typeof sendGcode === 'function') {
-    sendGcode(script);
-  } else {
-    console.error("Globální funkce 'sendGcode' není dostupná. Ujistěte se, že app.js je načtený.");
-    appendLine("; Chyba: Nepodařilo se odeslat příkaz.");
-  }
-}
-
-// --- Navázání UI prvků (vstup, tlačítka, historie) ---
+// --- Navázání UI prvků ---
 function bindUI() {
   const input = $("#consoleInput");
   const sendBtn = $("#consoleSendBtn");
-  const clearBtn = $("#consoleClearBtn");
-  const m105Btn = $("#consoleM105Btn");
-
-  // Odeslání příkazu po kliknutí na tlačítko
-  sendBtn?.addEventListener("click", () => {
+  
+  const sendCommand = () => {
     if (!input) return;
     const cmd = input.value.trim();
     if (!cmd) return;
 
-    // Uložíme do historie, jen pokud se neopakuje
     if (historyBuf[historyBuf.length - 1] !== cmd) {
       historyBuf.push(cmd);
     }
-    histIdx = historyBuf.length; // Resetujeme pozici v historii
+    histIdx = historyBuf.length;
 
-    sendConsoleCommand(cmd);
+    // ✅ Používáme globální funkci z app.js
+    if (typeof sendGcode === 'function') {
+      sendGcode(cmd);
+    } else {
+      console.error("Globální funkce 'sendGcode' není dostupná.");
+      appendLine("; Chyba: Nepodařilo se odeslat příkaz.");
+    }
+    
     input.value = "";
-    input.focus(); // Vrátíme focus zpět do inputu
-  });
+    input.focus();
+  };
 
-  // Vyčištění logu
-  clearBtn?.addEventListener("click", () => {
-    const box = $("#consoleLog");
-    if (box) box.innerHTML = "";
-  });
-
-  // Rychlé tlačítko pro M105 (status teploty)
-  m105Btn?.addEventListener("click", () => {
-    if (input) input.value = "M105";
-    sendBtn?.click();
-  });
-
-  // Zpracování klávesnice v inputu (Enter, šipky pro historii)
+  sendBtn?.addEventListener("click", sendCommand);
   input?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      sendBtn?.click();
+      sendCommand();
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (histIdx > 0) histIdx--;
@@ -95,27 +63,34 @@ function bindUI() {
       input.value = historyBuf[histIdx] ?? '';
     }
   });
+
+  $("#consoleClearBtn")?.addEventListener("click", () => {
+    const box = $("#consoleLog");
+    if (box) box.innerHTML = "";
+  });
 }
 
 // --- Inicializace stránky ---
 function init() {
   bindUI();
 
-  // ✅ PŘIJÍMÁME ODPOVĚDI Z GLOBÁLNÍHO WEBSOCKETU
-  // Nasloucháme na vlastní událost, kterou posílá app.js, když přijde G-code odpověď.
+  // ✅ Nasloucháme na globální událost pro odpovědi
   document.addEventListener('klipper-gcode-response', (event) => {
     const line = event.detail;
     if (typeof line === 'string') {
-      appendLine(line);
+      // Zobrazíme POUZE odpovědi, ne odeslané příkazy (ty už přidáváme sami)
+      if (!line.startsWith(">>>")) {
+        appendLine(line);
+      }
     }
   });
 
-  // Požádáme o úvodní stav, abychom naplnili konzoli
-  setTimeout(() => sendConsoleCommand("M115"), 200); // Získání verze firmwaru
-  setTimeout(() => sendConsoleCommand("M105"), 400); // Získání aktuálních teplot
+  // Požádáme o úvodní stav
+  if (typeof sendGcode === 'function') {
+    setTimeout(() => sendGcode("M115"), 200);
+  }
 }
 
-// Spustíme logiku jen na stránce /console
 if (location.pathname.startsWith("/console")) {
   window.addEventListener("DOMContentLoaded", init);
 }

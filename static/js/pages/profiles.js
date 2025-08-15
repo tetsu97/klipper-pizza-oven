@@ -1,4 +1,4 @@
-// /static/js/pages/profiles.js (OPRAVENÁ VERZE)
+// static/js/pages/profiles.js (Opravená verze)
 
 (function () {
   if (!location.pathname.startsWith('/profiles')) return;
@@ -9,6 +9,7 @@
   
   const $  = (sel, ctx=document) => ctx.querySelector(sel);
   const toInt = (v, d=0) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : d; };
+  // ... (všechny ostatní pomocné funkce a třídy jako humanSize, Orca, Thumbs, atd. zůstávají stejné) ...
   const humanSize = (bytes) => {
     if (bytes == null) return "—";
     if (bytes < 1024) return `${bytes} B`;
@@ -293,7 +294,7 @@
         programType: 'annealing',
         currentFile: null,
         startTemp: 0,
-        programName: 'Nový profil žíhání',
+        programName: '',
         filamentType: '',
         segments: [],
         dryingTime: 300,
@@ -312,7 +313,6 @@
             ProfilesService.getContent(fileName)
         ]);
         
-        // ZMĚNA: Správně určíme typ profilu z načtených dat
         const programType = data.mode || 'annealing';
         const points = data.points || [];
 
@@ -380,7 +380,6 @@
       $('#filamentType').value = filamentType;
       $('#gcodeOutput').value = gcode;
       
-      // ZMĚNA: Správně nastavíme hodnoty i pro sušení
       $('#dryingTime').value = dryingTime;
       $('#dryingTemp').value = dryingTemp;
 
@@ -499,8 +498,11 @@
         const r = await ProfilesService.saveToKlipper(filename, this.state.gcode);
         Toast.show('Uloženo jako: ' + r.name, 'success');
         
-        const blob = new Blob([this.state.gcode], {type:'text/plain'});
-        const a = document.createElement('a'); a.download = filename; a.href = URL.createObjectURL(blob); a.click(); URL.revokeObjectURL(a.href);
+        // =================================================================
+        // ===== ZMĚNA ZDE: TATO ČÁST KÓDU BYLA ODSTRANĚNA ===============
+        // const blob = new Blob([this.state.gcode], {type:'text/plain'});
+        // const a = document.createElement('a'); a.download = filename; a.href = URL.createObjectURL(blob); a.click(); URL.revokeObjectURL(a.href);
+        // =================================================================
 
         this.modal.close();
         if (this._reloadCallback) await this._reloadCallback();
