@@ -47,3 +47,15 @@ Have an idea for an improvement or found a bug? Feel free to create an *Issue* o
 ## 📄 License
 
 This project is licensed under the **MIT License**. For more information, see the [LICENSE](LICENSE) file.
+
+---
+
+❤️ Support My Work
+If you like this project and find it useful, please consider supporting me. A small donation helps me dedicate more time to maintaining this project and developing new features. Every contribution is highly appreciated!
+
+
+<div align="center">
+<a href="https-ko--fi-com-tetsu97.proxy.goog/B0B4A4V7X](https://ko-fi.com/tetsu97" target="_blank">
+<img src="https://storage.ko-fi.com/cdn/opengraph_assets/default_creator_og/hz_profile_page.png" alt="Buy Me a Coffee at ko-fi.com" style="height: 150px !important; width: auto !important;">
+</a>
+</div>
