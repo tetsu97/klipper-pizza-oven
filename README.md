@@ -60,7 +60,7 @@ Have an idea for an improvement or found a bug? Feel free to create an *Issue* o
 
 ## 📄 License
 
-This project is licensed under the **MIT License**. For more information, see the [LICENSE](LICENSE) file.
+This project is licensed under the **GNU General Public License v3.0**. For more information, see the [LICENSE](LICENSE) file.
 
 ---
 
