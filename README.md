@@ -10,9 +10,9 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 
 ---
 
-## 📸 Screenshots
-
-(./docs/images/preview1.png) | (./docs/images/preview2.png) 
+| Desktop | Mobile |
+| :---: | :---: |
+| ![Dashboard View](/docs/images/preview1.png) | ![Profiles View](./docs/images/preview2.png) |
 
 ---
 
