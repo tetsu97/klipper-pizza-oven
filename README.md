@@ -38,16 +38,6 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 
 ---
 
-## 🚀 Installation and Setup
-
-### Prerequisites
-
-* Python 3.8+ installed.
-* A working installation of Klipper and Moonraker on your printer/device.
-* Network access to the device.
-
----
-
 ## 🤝 Contributing
 
 Have an idea for an improvement or found a bug? Feel free to create an *Issue* or send a *Pull Request*. All contributions are welcome!
