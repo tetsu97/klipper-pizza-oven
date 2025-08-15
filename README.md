@@ -2,7 +2,7 @@
 
 ![GitHub stars](https://img.shields.io/github/stars/tetsu97/klipper-pizza-oven?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/tetsu97/klipper-pizza-oven?style=social)
-![License](github.com/tetsu97/klipper-pizza-oven/tree/main#GPL-3.0-1-ov-file)
+
 
 A modern, responsive, and user-friendly web interface for controlling a DIY Oven with Klipper firmware, specially adapted for annealing 3D printed parts and drying filaments or for use as a "pizza oven".
 
