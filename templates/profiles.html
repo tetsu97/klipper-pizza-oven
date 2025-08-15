@@ -76,7 +76,7 @@
             <div class="chart-wrap">
               <canvas id="editorChart"></canvas>
             </div>
-            <label for="gcodeOutput">Generated G-code Preview:</label>
+            <label for="gcodeOutput">G-code Preview:</label>
             <textarea id="gcodeOutput" spellcheck="false" readonly></textarea>
           </div>
         </div>
@@ -93,7 +93,7 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/vendor/chartjs/chart.js"></script>
+  {{ super() }} <script src="/static/vendor/chartjs/chart.js"></script>
   <script src="/static/js/pages/profiles.js"></script>
   <script src="/static/js/components/statusbar.js"></script>
 {% endblock %}

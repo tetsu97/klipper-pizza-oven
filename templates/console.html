@@ -15,6 +15,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <script type="module" src="/static/js/pages/console.js"></script>
+  {{ super() }} <script type="module" src="/static/js/pages/console.js"></script>
   <script src="/static/js/components/statusbar.js"></script>
 {% endblock %}

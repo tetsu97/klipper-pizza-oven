@@ -102,7 +102,7 @@ const StartJobModal = {
     if (!this.modal) this.init();
     this.currentFile = fileName;
     this.titleEl.textContent = fileName;
-    this.durationEl.textContent = 'Načítám...';
+    this.durationEl.textContent = 'Loading...';
     this.modal.style.display = 'flex';
 
     try {
@@ -121,7 +121,7 @@ const StartJobModal = {
         const m = totalMinutes % 60;
         this.durationEl.textContent = `${h}h ${m}m`;
       } else {
-        this.durationEl.textContent = 'Neznámý';
+        this.durationEl.textContent = 'Unkown';
       }
 
       // 3. Vykreslíme graf

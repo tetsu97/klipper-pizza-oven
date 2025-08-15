@@ -604,10 +604,10 @@
       menu.id = 'profilesContextMenu';
       menu.className = 'context-menu';
       menu.innerHTML = `
-        <li><button data-act="start">Spustit</button></li>
-        <li><button data-act="edit">Upravit</button></li>
-        <li><button data-act="download">Stáhnout</button></li>
-        <li><button data-act="delete" class="btn--danger">Smazat</button></li>
+        <li><button data-act="start">Start</button></li>
+        <li><button data-act="edit">Edit</button></li>
+        <li><button data-act="download">Download</button></li>
+        <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Delete</button></li>
       `;
       document.body.appendChild(menu);
       this.contextMenu = menu;

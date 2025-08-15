@@ -128,7 +128,7 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
+  {{ super() }} <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
   <script src="/static/vendor/codemirror/addon/overlay.js"></script>
   <script src="/static/vendor/codemirror/mode/properties/properties.js"></script>
   <script src="/static/vendor/codemirror/mode/klipper.js"></script>

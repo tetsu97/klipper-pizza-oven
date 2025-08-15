@@ -61,9 +61,9 @@
       menu.id = 'machineContextMenu';
       menu.className = 'context-menu';
       menu.innerHTML = `
-          <li><button data-act="edit">Upravit</button></li>
-          <li><button data-act="download">Stáhnout</button></li>
-          <li><button data-act="delete" style="color:#f57c7c;">Smazat</button></li>
+          <li><button data-act="edit">Edit</button></li>
+          <li><button data-act="download">Download</button></li>
+          <li><button data-act="delete" style="color:#f57c7c;">Delete</button></li>
       `;
       document.body.appendChild(menu);
       machineContextMenu = menu;

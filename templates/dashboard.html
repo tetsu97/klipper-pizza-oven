@@ -88,6 +88,6 @@
 {% endblock %}
 
 {% block scripts %}
-  <script src="/static/vendor/chartjs/chart.js"></script>
+  {{ super() }} <script src="/static/vendor/chartjs/chart.js"></script>
   <script type="module" src="/static/js/pages/dashboard.js"></script>
 {% endblock %}
