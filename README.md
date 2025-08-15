@@ -46,56 +46,6 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 * A working installation of Klipper and Moonraker on your printer/device.
 * Network access to the device.
 
-### Installation Steps
-
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/tetsu97/klipper-pizza-oven.git](https://github.com/tetsu97/klipper-pizza-oven.git)
-    cd klipper-pizza-oven
-    ```
-
-2.  **Create and activate a virtual environment:**
-    ```bash
-    # For Linux / macOS
-    python3 -m venv venv
-    source venv/bin/activate
-
-    # For Windows
-    python -m venv venv
-    .\venv\Scripts\activate
-    ```
-
-3.  **Install the required dependencies:**
-    *(I recommend creating a `requirements.txt` file with the following content)*
-    ```
-    fastapi
-    uvicorn[standard]
-    jinja2
-    python-dotenv
-    requests
-    ```
-    Then install using:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Configure the Klipper connection:**
-    Rename the `.env.example` file to `.env` and modify the values to match the IP address and port of your Moonraker API.
-
-    **`.env` file:**
-    ```
-    KLIPPER_HOST=192.168.1.100
-    KLIPPER_PORT=7125
-    GCODE_DIR=/home/pi/printer_data/gcodes
-    CONFIG_DIR=/home/pi/printer_data/config
-    ```
-
-5.  **Run the application:**
-    ```bash
-    uvicorn main:app --reload
-    ```
-    The application will be available by default at `http://127.0.0.1:8000`.
-
 ---
 
 ## 🤝 Contributing
