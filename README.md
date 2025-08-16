@@ -32,6 +32,8 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 
 This project is actively developed. Here are some of the features and improvements planned for the future:
 
+* Temperature Units: Add a setting to switch between Celsius and Fahrenheit.
+
 * Language Localization: Add support for multiple languages (e.g., German, Czech).
 
 * Job History: Log and review past cycles, including a chart of the actual temperature curve.
