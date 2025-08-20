@@ -13,18 +13,19 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 | Desktop | Mobile |
 | :---: | :---: |
 | ![Dashboard View](/docs/images/preview1.png) | ![Profiles View](./docs/images/preview2.png) |
+| ![Profiles View](./docs/images/preview3.png) |
 
 ---
 
 ## ✨ Key Features
 
-* **🖥️ Dashboard:** Monitor temperature, program progress, and G-code preview in real-time, and control your oven.
-* **📂 Profile Management:** Create, edit, and manage profiles for annealing and filament drying.
-* **📊 G-code Generator:** Easily generate G-code based on temperature segments or a fixed temperature and time.
-* **📈 Interactive Charts:** Get a visual preview of the temperature curve during profile creation and program execution.
-* **⌨️ Terminal & Console:** Send G-code commands directly to Klipper and view the responses in real-time.
-* **📱 Fully Responsive Design:** Control your oven comfortably from your computer, tablet, or mobile phone.
-* **📝 File Editor:** Edit Klipper configuration files (`printer.cfg`, etc.) directly from the web interface.
+* **🖥️ Dashboard:** Monitor the oven's temperature, program progress, and see a G-code preview in real-time. Includes controls for pausing, resuming, and canceling processes.
+* **📂 Profile Management:** Easily create, manage, and start custom heating profiles for both multi-segment annealing and single-temperature filament drying.
+* **📈 Interactive Charts:** Get a visual preview of the temperature curve during profile creation and monitor live temperature data on the dashboard.
+* **⌨️ Console:** Send G-code commands directly to Klipper and view real-time responses in the console log.
+* **📱 Fully Responsive & Touch-Friendly:** Control your oven from any device—desktop, tablet, or mobile. Includes a dedicated full-screen interface (/display) for small touchscreens.
+* **📝 File Manager & Editor:** A built-in editor on the "Machine" page allows you to create, edit, and delete Klipper configuration files (printer.cfg, macros, etc.) directly from the web interface.
+* **⚙️ Machine & System Management:** View system vitals like CPU temperature and memory usage, manage Klipper/Moonraker updates, and install the required Klipper module with a single click.
 
 ---
 
