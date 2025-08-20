@@ -8,18 +8,16 @@ HOME_DIR = Path.home()
 # Základní URL pro Moonraker/Klipper API
 KLIPPER_API_URL = os.getenv("KLIPPER_API_URL", "http://127.0.0.1")
 
-# Cesta k adresáři pro ukládání G-code profilů
-# Výchozí hodnota je nyní /home/pi/printer_data/gcodes
-PROFILES_DIR = os.getenv("PROFILES_DIR", str(HOME_DIR / "printer_data" / "gcodes"))
-
-# ZMĚNA ZDE: Cesta k adresáři pro konfigurační soubory Klipperu
-# Nyní ukazuje přesně na adresář, který jsi zadal.
+# Cesta k adresáři pro konfigurační soubory Klipperu
+# Zde jsou uloženy jak konfigurace, tak profily (pizza_*.cfg)
 CONFIG_DIR = os.getenv("CONFIG_DIR", str(HOME_DIR / "printer_data" / "config"))
+
+# OPRAVA: Přidána chybějící konstanta pro okolní teplotu
+AMBIENT_TEMP = 25 # Degrees C
 
 # Aplikace zajistí, že adresář pro profily existuje.
 # U konfiguračního adresáře předpokládáme, že již existuje.
-os.makedirs(PROFILES_DIR, exist_ok=True)
+# os.makedirs(PROFILES_DIR, exist_ok=True) # Tento řádek již není potřeba
 
 # Výpis cest do konzole při startu pro snadnou kontrolu
-print(f"INFO:     Profiles directory is set to: {PROFILES_DIR}")
 print(f"INFO:     Config directory is set to: {CONFIG_DIR}")

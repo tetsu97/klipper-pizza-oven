@@ -2,13 +2,12 @@
 from pathlib import Path
 import logging
 from fastapi import APIRouter, HTTPException, Query
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from .. import settings
 from ..models import FileNamePayload, SaveConfigPayload
 from ..utils import is_safe_child
 
-# ZMĚNA ZDE: Prefix je nyní správně nastaven na /api/config
 router = APIRouter(
     prefix="/api/config",
     tags=["config"],
@@ -34,35 +33,35 @@ def _iter_config_files(base: Path) -> List[Dict[str, Any]]:
             continue
     return out
 
-# Tato cesta bude nyní správně -> /api/config/files
 @router.get("/files")
-async def config_files():
+async def config_files() -> Dict[str, List[Dict[str, Any]]]:
     return {"files": _iter_config_files(CONFIG_DIR)}
 
-# Tato cesta bude nyní správně -> /api/config/file
 @router.get("/file")
-async def get_config_file(name: str = Query(..., description="Relative path in config dir")):
+async def get_config_file(name: str = Query(..., description="Relative path in config dir")) -> Dict[str, str]:
     path = (CONFIG_DIR / name).resolve()
     if not (is_safe_child(path, CONFIG_DIR) and path.is_file()):
-        raise HTTPException(status_code=404, detail="File not found")
-    txt = path.read_text(encoding="utf-8", errors="ignore")
-    return {"name": name, "content": txt}
+        raise HTTPException(status_code=404, detail=f"Soubor '{name}' nebyl nalezen (File '{name}' not found).")
+    try:
+        txt = path.read_text(encoding="utf-8", errors="ignore")
+        return {"name": name, "content": txt}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Chyba při čtení souboru '{name}': {e} (Error reading file '{name}': {e})")
 
 @router.post("/file")
-async def save_config_file(payload: SaveConfigPayload):
+async def save_config_file(payload: SaveConfigPayload) -> Dict[str, Union[bool, str]]:
     path = (CONFIG_DIR / payload.name.strip()).resolve()
     if not is_safe_child(path, CONFIG_DIR):
-        raise HTTPException(status_code=400, detail="Invalid name")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(payload.content, encoding="utf-8")
-    return {"ok": True, "name": payload.name}
-
-# Tyto endpoiny byly v původním souboru pod /api/, ale logicky patří sem.
-# Pro konzistenci je přesuneme také pod /api/config.
-# Pokud by to dělalo problémy, můžeme je vrátit do samostatného routeru.
+        raise HTTPException(status_code=400, detail=f"Neplatná cesta k souboru: '{payload.name}' (Invalid file path).")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(payload.content, encoding="utf-8")
+        return {"ok": True, "name": payload.name}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Nepodařilo se uložit soubor '{payload.name}': {e} (Failed to save file '{payload.name}': {e})")
 
 @router.post("/create-file")
-async def create_empty_file(payload: FileNamePayload):
+async def create_empty_file(payload: FileNamePayload) -> Dict[str, Union[bool, str]]:
     path = (CONFIG_DIR / payload.name.strip()).resolve()
     if not is_safe_child(path, CONFIG_DIR):
         raise HTTPException(status_code=400, detail="Invalid name")
@@ -72,8 +71,9 @@ async def create_empty_file(payload: FileNamePayload):
     return {"ok": True, "name": payload.name}
 
 @router.delete("/delete-file")
-async def delete_file(payload: FileNamePayload):
-    path = (CONFIG_DIR / payload.name.strip()).resolve()
+async def delete_file(name: str = Query(..., description="File name to delete")) -> Dict[str, bool]:
+    # Payload is no longer needed, we get 'name' directly from the URL query
+    path = (CONFIG_DIR / name.strip()).resolve()
     if not (is_safe_child(path, CONFIG_DIR) and path.is_file()):
         raise HTTPException(status_code=404, detail="File not found")
     path.unlink(missing_ok=True)

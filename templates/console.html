@@ -9,12 +9,15 @@
 
   <br><div class="row gap console-input">
   <input id="consoleInput" type="text" placeholder="Enter G-code (e.g. M105, M118 Hello)" />
-  <button id="consoleSendBtn" type="button" onclick="sendConsole()">Send</button>
+  <button id="consoleSendBtn" type="button" class="has-tooltip">
+      Send
+      <span class="tooltip-text">Odešle zadaný G-kód příkaz do Klipperu. Pro odeslání lze použít i klávesu Enter.</span>
+  </button>
 </div>
 </div>
 {% endblock %}
 
-{% block scripts %}
-  {{ super() }} <script type="module" src="/static/js/pages/console.js"></script>
-  <script src="/static/js/components/statusbar.js"></script>
+{% block page_scripts %}
+  <script type="module" src="/static/js/pages/console.js"></script>
+  <script type="module" src="/static/js/components/statusbar.js"></script>
 {% endblock %}

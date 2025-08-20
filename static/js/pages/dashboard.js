@@ -1,4 +1,6 @@
-// /static/js/pages/dashboard.js (Kompletní a opravená verze)
+// /static/js/pages/dashboard.js
+import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergencyStop } from '../app.js'; // <-- IMPORT
+
 
 (function () {
     if (!location.pathname.startsWith('/dashboard')) return;
@@ -43,12 +45,34 @@
             type: 'line', data: { labels: [], datasets: [] },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: false, parsing: false, normalized: true,
-                interaction: { mode: 'nearest', intersect: false }, layout: { padding: 0 },
+                // ZMĚNA ZDE: Vylepšení interakce
+                interaction: {
+                    mode: 'index', // Zobrazí tooltip pro všechny datasety na daném bodě
+                    intersect: false,
+                },
+                layout: { padding: 0 },
                 scales: {
                     x: { ticks: { color: '#ddd', maxRotation: 0 }, grid: { color: 'rgba(255,255,255,.07)' } },
-                    y: { ticks: { color: '#ddd' }, title: { display: true, text: '°C', color: '#ddd' }, grid: { color: 'rgba(255,255,255,.07)' } }
+                    y: {
+                        ticks: { color: '#ddd' },
+                        title: { display: true, text: '°C', color: '#ddd' },
+                        grid: { color: 'rgba(255,255,255,.07)' }
+                    }
                 },
-                plugins: { legend: { labels: { color: '#ddd' } } }
+                plugins: {
+                    legend: { labels: { color: '#ddd' } },
+                    // ZMĚNA ZDE: Konfigurace tooltipů
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#2a2a40',
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        boxPadding: 4,
+                    }
+                }
             }
         });
         return window.tempChart;

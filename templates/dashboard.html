@@ -17,8 +17,14 @@
       </div>
       <div class="dash-status-right">
         <div class="dash-emergency">
-          <button id="btnFwRestart" type="button">Firmware restart</button>
-          <button id="btnEStop" type="button" class="btn--danger">Emergency stop</button>
+          <button id="btnFwRestart" type="button" class="has-tooltip">
+            Firmware restart
+            <span class="tooltip-text">Restartuje software Klipperu. Zruší jakýkoliv běžící proces. Používejte opatrně.</span>
+          </button>
+          <button id="btnEStop" type="button" class="btn--danger has-tooltip">
+            Emergency stop
+            <span class="tooltip-text">Okamžitě zastaví všechny motory a topení. Ekvivalent příkazu M112.</span>
+          </button>
         </div>
       </div>
       <div class="dash-progress"><div id="dashProgressBar" style="width:0%"></div></div>
@@ -30,43 +36,49 @@
       <section class="dash-card" id="dashJobCard">
         <div class="dash-card-head">
           <h3 id="dashJobTitle">Actual program</h3>
-          
           <div id="dashClearStateContainer" style="display: none;">
             <button id="dashClearStateBtn" type="button">Clear Status</button>
           </div>
-
           <div class="dash-actions" id="dashActions">
-            <button id="dashPause">Pause</button>
-            <button id="dashResume">Resume</button>
-            <button id="dashCancel" class="danger">Cancel</button>
-          </div>
+            <button id="dashPause" class="has-tooltip">
+                Pause
+                <span class="tooltip-text">Pozastaví aktuální proces.</span>
+            </button>
+            <button id="dashResume" class="has-tooltip">
+                Resume
+                <span class="tooltip-text">Obnoví pozastavený proces.</span>
+            </button>
+            <button id="dashCancel" class="danger has-tooltip">
+                Cancel
+                <span class="tooltip-text">Zruší aktuální proces. Tuto akci nelze vrátit zpět.</span>
+            </button>
+        </div>
         </div>
         <div id="dashJobDetail" class="dash-job-detail">
-        <div class="dash-preview" id="dashPreview">—</div>
-        <div class="dash-kv">
-          <div><span>Name:</span><b id="dashJobName">—</b></div>
-          
+          <div class="dash-preview" id="dashPreview">—</div>
+          <div class="dash-kv">
+            <div><span>Name:</span><b id="dashJobName">—</b></div>
+          </div>
         </div>
-      </div>
-
-      <div id="dashFileList" class="dash-file-list" hidden>
-        <table class="responsive-table">
-          <thead>
-            <tr><th>Name</th><th>Last modified</th><th>Size</th><th></th></tr>
-          </thead>
-          <tbody id="dashRecentFiles"></tbody>
-        </table>
-      </div>
+        <div id="dashFileList" class="dash-file-list" hidden>
+          <table class="responsive-table">
+            <thead>
+              <tr><th>Name</th><th>Last modified</th><th>Size</th></tr>
+            </thead>
+            <tbody id="dashRecentFiles"></tbody>
+          </table>
+        </div>
       </section>
 
       <!-- Temps -->
-      <section class="dash-card" id="dashTempsCard">
+      <!-- OPRAVA: Odstraněn vnořený div a přidána třída "dash-card--temps" -->
+      <section class="dash-card dash-card--temps" id="dashTempsCard">
         <div class="dash-card-head"><h3>Temperature</h3></div>
-        <!-- ZMĚNA: Odstraněn div.dash-temps-layout a tabulka s grafem jsou nyní přímo v sekci -->
-        <table class="temps" style="margin-bottom: 1rem;">
+        <table class="temps">
           <thead><tr><th>Sensor</th><th>Actual</th><th>Target</th></tr></thead>
           <tbody id="dashTempsTable"></tbody>
         </table>
+        <br>
         <div class="chart-wrap">
           <canvas id="dashTempChart"></canvas>
         </div>
@@ -83,11 +95,14 @@
       </section>
     </div>
   </div>
-  <!-- ==== /DASHBOARD ==== -->
 </div>
 {% endblock %}
 
-{% block scripts %}
-  {{ super() }} <script src="/static/vendor/chartjs/chart.js"></script>
-  <script type="module" src="/static/js/pages/dashboard.js"></script>
+{% block vendor_scripts %}
+  <script src="/static/vendor/chartjs/chart.js"></script>
+{% endblock %}
+
+{% block page_scripts %}
+  {{ super() }} <script type="module" src="/static/js/pages/dashboard.js"></script>
+  <script type="module" src="/static/js/components/statusbar.js"></script>
 {% endblock %}

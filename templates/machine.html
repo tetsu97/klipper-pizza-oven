@@ -9,11 +9,9 @@
 {% block content %}
 <div class="panel active">
 
-  <!-- Mini status (volitelné sjednocení s ostatními) -->
   {% include "partials/status_bar.html" %}
 
   <div class="machine-grid">
-    <!-- LEFT: File manager -->
     <div class="machine-col left">
       <div class="panel-ish" style="margin-bottom:14px;">
         <div class="row space-between" style="margin-bottom:.5rem;">
@@ -40,14 +38,19 @@
       </div>
     </div>
 
-    <!-- RIGHT: Update manager + System loads -->
     <div class="machine-col right">
       <div class="panel-ish" style="margin-bottom:14px;">
         <div class="row space-between" style="margin-bottom:.5rem;">
           <h2 style="margin:0;">Update Manager</h2>
           <div>
-            <button id="updRefreshBtn">↻ Refresh</button>
-            <button id="updAllBtn">Update all</button>
+            <button id="updRefreshBtn" class="has-tooltip">
+              ↻ Refresh
+              <span class="tooltip-text">Znovu zkontroluje dostupné aktualizace.</span>
+            </button>
+            <button id="updAllBtn" class="has-tooltip">
+              Update all
+              <span class="tooltip-text">Aktualizuje všechny komponenty najednou. Může vyžadovat restart.</span>
+            </button>
           </div>
         </div>
         <table id="updateTable" class="responsive-table">
@@ -85,7 +88,6 @@
     </div>
   </div>
 
-  <!-- MODAL: Create file -->
   <div id="createFileModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width: 900px;">
       <div class="row space-between align">
@@ -93,10 +95,16 @@
         <button id="createCloseBtn" style="margin:0;background:#444;">Close</button>
       </div>
 
-      <label>File path (relative to config dir):</label>
+      <label for="createFilePath" class="has-tooltip">
+        File path (relative to config dir):
+        <span class="tooltip-text">Zadejte cestu k souboru včetně podsložek, např. 'macros/moje_makro.cfg'.</span>
+      </label>
       <input id="createFilePath" placeholder="macros/my_macro.cfg">
 
-      <label>Content:</label>
+      <label for="createFileContent" class="has-tooltip">
+        Content:
+        <span class="tooltip-text">Vložte obsah nového souboru. Můžete nechat prázdné a upravit později.</span>
+      </label>
       <textarea id="createFileContent" spellcheck="false" style="height:280px;"></textarea>
 
       <div class="actions-right">
@@ -105,7 +113,6 @@
     </div>
   </div>
 
-  <!-- MODAL: Edit file (CodeMirror + rename) -->
   <div id="editFileModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width: 1000px;">
       <div class="row space-between align">
@@ -113,7 +120,10 @@
         <button id="editFileCloseBtn" style="margin:0;background:#444;">Close</button>
       </div>
 
-      <label>File name (relative to config):</label>
+      <label for="editFileName" class="has-tooltip">
+        File name (relative to config):
+        <span class="tooltip-text">Můžete změnit název souboru a uložit ho jako nový. Původní soubor bude smazán.</span>
+      </label>
       <input id="editFileName" placeholder="macros/my_macro.cfg">
 
       <textarea id="editFileTextarea" spellcheck="false" style="height:60vh;"></textarea>
@@ -127,12 +137,13 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-  {{ super() }} <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
+{% block vendor_scripts %}
+  <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
   <script src="/static/vendor/codemirror/addon/overlay.js"></script>
   <script src="/static/vendor/codemirror/mode/properties/properties.js"></script>
   <script src="/static/vendor/codemirror/mode/klipper.js"></script>
+{% endblock %}
 
+{% block page_scripts %}
   <script type="module" src="/static/js/pages/machine.js"></script>
-  <script src="/static/js/components/statusbar.js"></script>
 {% endblock %}

@@ -1,14 +1,11 @@
-// /static/js/pages/console.js (Sjednocená verze)
+// /static/js/pages/console.js
+import { sendGcode } from '../app.js';
 
 // --- Pomocné funkce ---
 const $ = (s, c = document) => c.querySelector(s);
 let historyBuf = [];
 let histIdx = -1;
 
-/**
- * Připojí řádek textu do logu konzole.
- * @param {string} line Text k přidání.
- */
 function appendLine(line) {
   const box = $("#consoleLog");
   if (!box) return;
@@ -36,19 +33,15 @@ function bindUI() {
     }
     histIdx = historyBuf.length;
 
-    // ✅ Používáme globální funkci z app.js
-    if (typeof sendGcode === 'function') {
-      sendGcode(cmd);
-    } else {
-      console.error("Globální funkce 'sendGcode' není dostupná.");
-      appendLine("; Chyba: Nepodařilo se odeslat příkaz.");
-    }
+    sendGcode(cmd);
     
     input.value = "";
     input.focus();
   };
 
+  // ZMĚNA ZDE: Přidání event listeneru
   sendBtn?.addEventListener("click", sendCommand);
+
   input?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -63,34 +56,25 @@ function bindUI() {
       input.value = historyBuf[histIdx] ?? '';
     }
   });
-
-  $("#consoleClearBtn")?.addEventListener("click", () => {
-    const box = $("#consoleLog");
-    if (box) box.innerHTML = "";
-  });
 }
 
 // --- Inicializace stránky ---
 function init() {
   bindUI();
 
-  // ✅ Nasloucháme na globální událost pro odpovědi
   document.addEventListener('klipper-gcode-response', (event) => {
     const line = event.detail;
     if (typeof line === 'string') {
-      // Zobrazíme POUZE odpovědi, ne odeslané příkazy (ty už přidáváme sami)
       if (!line.startsWith(">>>")) {
         appendLine(line);
       }
     }
   });
 
-  // Požádáme o úvodní stav
-  if (typeof sendGcode === 'function') {
-    setTimeout(() => sendGcode("M115"), 200);
-  }
+  setTimeout(() => sendGcode("M115"), 200);
 }
 
+// Spustíme logiku pouze pokud jsme na správné stránce
 if (location.pathname.startsWith("/console")) {
   window.addEventListener("DOMContentLoaded", init);
 }

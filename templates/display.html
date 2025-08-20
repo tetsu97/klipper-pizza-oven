@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="google" content="notranslate">
+    <title>Klipper Oven Display</title>
+    <link rel="stylesheet" href="/static/css/display.css">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+
+    <div class="display-top-bar">
+        <div id="displayNetworkStatus" class="network-status"></div>
+        <div id="displayTime" class="time-center">--:--</div>
+        <div class="settings-container">
+            <button id="displaySettingsBtn" class="settings-button" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61-.25-1.17-.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19-.15-.24.42-.12.64l2 3.46c.12.22.39.3.61-.22l2.49 1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div id="mainScreen" class="screen active">
+        <div class="display-panel status-panel">
+            <div id="statusText" class="status-text-prominent">Standby</div>
+            <div class="temp-main">
+                <span id="currentTemp">--</span>
+                <span class="unit">°C</span>
+            </div>
+            <div id="targetTemp" class="target-temp">Cíl: -- °C</div>
+        </div>
+
+        <div id="progressPanel" class="display-panel progress-panel">
+            <div class="progress-info">
+                <span>Průběh</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="progress-bar-container">
+                <div id="progressBar" style="width: 0%;"></div>
+            </div>
+            <div id="timePanel" class="progress-time">
+                <span>Uplynulý čas:</span>
+                <span id="statusTime">--:--:--</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="btnStart" class="btn btn-primary btn-with-icon">
+                <span>Select Profile</span>
+            </button>
+            <button id="btnActions" class="btn btn-with-icon" style="display: none;">
+                <span>Action</span>
+            </button>
+            <button id="btnClearStatus" class="btn" style="display: none; grid-column: 1 / -1;">Clear</button>
+            <button id="btnCancel" class="btn btn-danger" style="display: none;">Zrušit</button>
+            <button id="btnPause" class="btn" style="display: none;">Pauza</button>
+            <button id="btnResume" class="btn" style="display: none;">Pokračovat</button>
+        </div>
+    </div>
+
+    <div id="profileScreen" class="screen">
+        <div class="header">
+            <h2>Select Profile</h2>
+            <button id="btnBack" class="btn">&times;</button>
+        </div>
+        <div id="profileList" class="profile-list"></div>
+    </div>
+    
+    <div id="actionsOverlay" class="actions-overlay" style="display: none;">
+        <div class="actions-panel">
+            <button id="actionsCloseBtn" class="actions-close-btn">&times;</button>
+            
+            <div id="actionsHomeView">
+                <h2>Action</h2>
+                <div class="actions-menu-grid">
+                    <button id="actionsBtnSetTemp" class="btn">Set Temp</button>
+                    <button id="actionsBtnPid" class="btn">PID Calibration</button>
+                </div>
+            </div>
+
+            <div id="actionsTempView" style="display: none;">
+                <h2>Set Temperature</h2>
+                <div id="targetControlOverlay" class="target-control-overlay">
+                    <button id="btnTempDown" class="temp-adjust-btn">-</button>
+                    <div id="targetTempOverlay" class="target-temp">-- °C</div>
+                    <button id="btnTempUp" class="temp-adjust-btn">+</button>
+                </div>
+            </div>
+
+            <div id="actionsPidView" style="display: none;">
+                <h2>PID Calibration</h2>
+                <div class="pid-inputs-overlay">
+                    <label for="pidTempInput">Target Temp (°C)</label>
+                    <input id="pidTempInput" type="number" value="150" class="btn">
+                    <label for="pidCoolTimeInput">Cooling Time (s)</label>
+                    <input id="pidCoolTimeInput" type="number" value="300" class="btn">
+                </div>
+                <button id="pidStartBtn" class="btn btn-primary">Start</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="startJobModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="startJobModalTitle" style="margin:0;">Start program</h2>
+                <button id="startJobModalCloseBtn" class="btn">Zavřít</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="chart-wrap">
+                    <canvas id="startJobModalChart"></canvas>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <div class="time-info">
+                    <strong>Total time:</strong>
+                    <span id="startJobModalDuration">—</span>
+                </div>
+                <button id="startJobModalConfirmBtn" class="btn btn-primary">Start</button>
+            </div>
+        </div>
+    </div>
+    
+    {% include "partials/settings_modal.html" %}
+
+    <script src="/static/vendor/chartjs/chart.js"></script>
+    <script type="module" src="/static/js/app.js" defer></script>
+    <script type="module" src="/static/js/pages/display.js" defer></script>
+</body>
+</html>

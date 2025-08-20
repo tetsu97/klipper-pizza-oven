@@ -27,73 +27,74 @@
 
   <!-- ============ JEDINÝ UNIVERZÁLNÍ MODÁL PRO EDITACI A TVORBU (RESPONZIVNÍ) ============ -->
   <div id="profileEditorModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <div class="row space-between align">
-        <h2 id="editorTitle" style="margin:0;">Create Profile</h2>
-        <button id="editorCloseBtn" class="btn">Close</button>
-      </div>
-
-      <div id="editorModeSwitcher" class="row gap-small" style="margin-top:.5rem;">
-        <button id="btn-annealing" class="btn active">Annealing</button>
-        <button id="btn-drying" class="btn">Drying</button>
-      </div>
-
-      <div class="two-col" style="margin-top:1rem;">
-          
-          <div>
-            <label for="programName">Profile Name:</label>
-            <input type="text" id="programName" placeholder="My Awesome Profile">
-
-            <label for="filamentType">Filament Type (optional):</label>
-            <input type="text" id="filamentType" placeholder="PC-CF, ABS-CF...">
-            
-            <div id="annealingInputs">
-              <h3 style="margin:.8rem 0 .4rem;">Segments</h3>
-              <!-- ZMĚNA: Původní <table> nahrazeno za <div> pro lepší responzivitu -->
-              <div id="segmentsList" class="segments-list">
-                <!-- Segmenty budou dynamicky vkládány sem pomocí JS -->
-              </div>
-              <div class="centered-row">
-                <button id="addSegmentBtn" class="btn">Add Segment</button>
-              </div>
-            </div>
-
-            <div id="dryingInputs" style="display:none;">
-              <div class="row gap">
-                <div class="w-400">
-                  <label for="dryingTime">Drying Time (minutes):</label>
-                  <input type="number" id="dryingTime" value="300" min="1">
-                </div>
-                <div class="w-400">
-                  <label for="dryingTemp">Drying Temperature (°C):</label>
-                  <input type="number" id="dryingTemp" value="60" min="1">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div class="chart-wrap">
-              <canvas id="editorChart"></canvas>
-            </div>
-            <label for="gcodeOutput">G-code Preview:</label>
-            <textarea id="gcodeOutput" spellcheck="false" readonly></textarea>
-          </div>
+      <div class="modal-content">
+        <div class="row space-between align">
+          <h2 id="editorTitle" style="margin:0;">Create Profile</h2>
+          <button id="editorCloseBtn" class="btn">Close</button>
         </div>
-      
-      <div class="actions-right" style="margin-top: 1.5rem;">
-        <button id="editorCancelBtn" class="btn">Cancel</button>
-        <button id="downloadGcodeBtn" class="btn btn--primary">Download</button>
-        <button id="editorSaveBtn" class="btn btn--primary">Save to Klipper</button>
+
+        <div id="editorModeSwitcher" class="row gap-small" style="margin-top:.5rem;">
+          <button id="btn-annealing" class="btn active">Annealing</button>
+          <button id="btn-drying" class="btn">Drying</button>
+        </div>
+
+        <div style="margin-top:1rem;">
+            <div>
+              <label for="programName">Name:</label>
+              <input type="text" id="programName" placeholder="Můj úžasný profil">
+
+              <label for="filamentType">Filament type:</label>
+              <input type="text" id="filamentType" placeholder="PC-CF, ABS-CF...">
+              
+              <div id="annealingInputs">
+                <h3 style="margin:.8rem 0 .4rem;">Segments</h3>
+                <div id="segmentsList" class="segments-list">
+                  </div>
+                <div class="centered-row">
+                  <button id="addSegmentBtn" class="btn">Add Segment</button>
+                </div>
+              </div>
+
+              <div id="dryingInputs" style="display:none;">
+                <div class="row gap">
+                  <div class="w-400">
+                    <label for="dryingTime" class="has-tooltip">
+                      Drying Time (minuty):
+                      <span class="tooltip-text">Celková doba, po kterou bude pec udržovat cílovou teplotu pro sušení.</span>
+                    </label>
+                    <input type="number" id="dryingTime" value="300" min="1">
+                  </div>
+                  <div class="w-400">
+                    <label for="dryingTemp" class="has-tooltip">
+                      Temperature Drying (°C):
+                      <span class="tooltip-text">Cílová teplota, na které bude proces sušení probíhat.</span>
+                    </label>
+                    <input type="number" id="dryingTemp" value="60" min="1">
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="chart-wrap" style="margin-top: 1.5rem;">
+                <canvas id="editorChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="actions-right" style="margin-top: 1.5rem;">
+          <button id="editorCancelBtn" class="btn">Cancel</button>
+          <button id="editorSaveBtn" class="btn btn--primary">Save to Klipper</button>
+        </div>
       </div>
-    </div>
   </div>
 
 </div>
 {% endblock %}
 
-{% block scripts %}
-  {{ super() }} <script src="/static/vendor/chartjs/chart.js"></script>
-  <script src="/static/js/pages/profiles.js"></script>
-  <script src="/static/js/components/statusbar.js"></script>
+{% block vendor_scripts %}
+  <script src="/static/vendor/chartjs/chart.js"></script>
+{% endblock %}
+
+{% block page_scripts %}
+  {{ super() }} <script type="module" src="/static/js/pages/profiles.js"></script>
+  <script type="module" src="/static/js/components/statusbar.js"></script>
 {% endblock %}

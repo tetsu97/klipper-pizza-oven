@@ -1,8 +1,15 @@
-fastapi
-uvicorn[standard]
+# requirements.txt
+fastapi>=0.100.0
+uvicorn[standard]>=0.20.0
 jinja2
 pydantic
 pydantic-settings
-httpx
+httpx>=0.23.0
 websockets
 psutil
+
+# Test dependencies
+pytest
+pytest-asyncio
+asgi-lifespan
+async-asgi-testclient

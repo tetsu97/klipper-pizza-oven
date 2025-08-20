@@ -1,23 +1,62 @@
 # app/routers/system.py
 import platform
 import re
+import socket
+import logging
 from fastapi import APIRouter
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 try:
     import psutil
 except ImportError:
     psutil = None
 
-# ZMĚNA ZDE: Prefix je nyní jen /api, aby cesty odpovídaly frontendu
 router = APIRouter(
     prefix="/api",
     tags=["system"],
 )
 
+def _get_network_info() -> List[Dict[str, str]]:
+    """Získá informace o aktivních síťových rozhraních (bezpečnější verze)."""
+    if not psutil:
+        return []
+    
+    interfaces = []
+    try:
+        addrs = psutil.net_if_addrs()
+        stats = psutil.net_if_stats()
+
+        for name, snics in addrs.items():
+            if name == "lo" or name not in stats or not stats[name].isup:
+                continue
+            
+            ip_address = None
+            for addr in snics:
+                if addr.family == socket.AF_INET:
+                    ip_address = addr.address
+                    break
+            
+            if ip_address:
+                conn_type = "other"
+                if name.startswith("wlan"):
+                    conn_type = "wifi"
+                elif name.startswith(("eth", "enp")):
+                    conn_type = "lan"
+                
+                interfaces.append({
+                    "name": name,
+                    "ip_address": ip_address,
+                    "type": conn_type
+                })
+    except Exception as e:
+        logging.error(f"Chyba při zjišťování stavu sítě pomocí psutil: {e}", exc_info=True)
+        return []
+
+    return interfaces
+
 @router.get("/system/host")
-async def system_host():
-    """Vrací informace o hostitelském systému (OS, RAM, CPU teplota)."""
+async def system_host() -> Dict[str, Any]:
+    """Vrací informace o hostitelském systému (OS, RAM, CPU, síť)."""
     os_name = platform.platform()
     mem_total = mem_used = None
     if psutil:
@@ -33,11 +72,14 @@ async def system_host():
         entries = temps.get(key) if key else next(iter(temps.values()), None)
         if entries and getattr(entries[0], "current", None) is not None:
             cpu_temp = float(entries[0].current)
+            
+    network_info = _get_network_info()
 
     return {
         "os": os_name,
-        "mem": {"total_kb": mem_total, "used_kb": mem_used, "free_kb": max(0, mem_total - mem_used)},
+        "mem": {"total_kb": mem_total, "used_kb": mem_used, "free_kb": max(0, mem_total - mem_used) if mem_total and mem_used else 0},
         "cpu_temp_c": cpu_temp,
+        "network": network_info,
     }
 
 def _disk_usage_json(path: str = "/") -> Dict[str, Any]:
@@ -46,8 +88,7 @@ def _disk_usage_json(path: str = "/") -> Dict[str, Any]:
     u = psutil.disk_usage(path)
     return {"total": u.total, "used": u.used, "free": u.free, "percent": u.percent}
 
-# Tato cesta bude nyní správně -> /api/disk
 @router.get("/disk")
-def get_disk():
+def get_disk() -> Dict[str, Any]:
     """Vrací informace o využití disku pro kořenový adresář."""
     return _disk_usage_json("/")

@@ -1,11 +1,12 @@
 # app/dependencies.py
 from contextlib import asynccontextmanager
+from typing import AsyncIterator
 import httpx
 from fastapi import FastAPI, Request
 from . import settings
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """
     Správce kontextu pro životní cyklus aplikace.
     Vytvoří instanci httpx.AsyncClient při startu a zavře ji při vypnutí.
