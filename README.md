@@ -63,6 +63,14 @@ Have an idea for an improvement or found a bug? Feel free to create an *Issue* o
 
 ---
 
+## 🙏 Acknowledgements
+
+A special thank you to user voidtrance for writing the initial pizza_oven.py Klipper module.
+
+Huge thanks to everyone on the Voron Discord server for their continuous help and support.
+
+---
+
 ## 📄 License
 
 This project is licensed under the **GNU General Public License v3.0**. For more information, see the [LICENSE](LICENSE) file.
