@@ -1,15 +1,15 @@
 // /static/js/components/statusbar.js
 
-// ZMĚNA ZDE: Importujeme potřebné funkce z hlavního modulu app.js
+// CHANGE HERE: Import necessary functions from the main app.js module
 import { handleFirmwareRestart, handleEmergencyStop } from '../app.js';
 
-// Pomocná funkce pro převod stavu na text a barvu
+// Helper function to map a state to text and color
 function mapReadableState(state) {
   const s = String(state || 'unknown').toLowerCase();
   switch (s) {
     case 'standby':
     case 'idle':     return { text: 'Standby', color: '#2e7d32' };
-    case 'printing': return { text: 'Probíhá proces', color: '#b38900' };
+    case 'printing': return { text: 'Process Running', color: '#b38900' };
     case 'paused':   return { text: 'Paused', color: '#ef6c00' };
     case 'complete': return { text: 'Completed', color: '#1e88e5' };
     case 'error':    return { text: 'Error', color: '#c62828' };
@@ -17,7 +17,7 @@ function mapReadableState(state) {
   }
 }
 
-// Funkce, která vezme data a aktualizuje JEDEN status bar panel
+// Function that takes data and updates ONE status bar panel
 function updateStatusBarUI(panel, statusData) {
   if (!panel || !statusData) return;
 
@@ -43,7 +43,7 @@ function updateStatusBarUI(panel, statusData) {
   }
 }
 
-// Hlavní logika: Posloucháme na globální signál 'klipper-status-update'
+// Main logic: Listen for the global 'klipper-status-update' signal
 document.addEventListener('klipper-status-update', (event) => {
   const statusData = event.detail;
   if (!statusData) return;
@@ -54,7 +54,7 @@ document.addEventListener('klipper-status-update', (event) => {
 });
 
 function bindStatusBarEmergency() {
-  // ZMĚNA ZDE: Používáme querySelectorAll pro případ, že by status bar byl na stránce vícekrát
+  // CHANGE HERE: Use querySelectorAll in case the status bar is on the page more than once
   document.querySelectorAll('.ovenStatusPanel').forEach(panel => {
       const fwRestartBtn = panel.querySelector('#osFwRestart');
       const eStopBtn = panel.querySelector('#osEStop');
@@ -68,5 +68,5 @@ function bindStatusBarEmergency() {
   });
 }
 
-// Spustíme navázání tlačítek po načtení stránky
+// Run the button binding after the page loads
 document.addEventListener('DOMContentLoaded', bindStatusBarEmergency);

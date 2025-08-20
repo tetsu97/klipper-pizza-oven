@@ -954,38 +954,68 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
     }
 }
 
-/* ===== Tooltips (Nápovědy) ===== */
+/* ===== Tooltips (JavaScript Controlled) ===== */
 .has-tooltip {
-  position: relative; /* Nutné pro pozicování tooltipu */
+  position: relative;
   cursor: help;
 }
 
 .tooltip-text {
+  /* Initial state: completely hidden */
   visibility: hidden;
-  position: absolute;
-  width: 240px;
+  opacity: 0;
+  
+  /* Positioning context */
+  position: fixed; /* Use fixed positioning to avoid scrollbar issues */
+  z-index: 1001;
+  
+  /* Appearance */
   background-color: #34407a;
   color: #fff;
   text-align: center;
   border-radius: 6px;
-  padding: 8px;
-  z-index: 10;
-  
-  /* Pozicování nad prvkem */
-  bottom: 110%;
-  left: 50%;
-  margin-left: -120px; /* Centrování (polovina šířky) */
-
-  opacity: 0;
-  transition: opacity 0.3s;
+  padding: 8px 12px;
   font-size: 0.85rem;
   font-weight: normal;
-  pointer-events: none; /* Zajistí, že tooltip nepřekáží myši */
+  white-space: pre-wrap; /* Allow long text to wrap */
+  
+  /* Sizing */
+  width: max-content;
+  max-width: 250px;
+  
+  /* Effects */
+  pointer-events: none; /* Crucial! */
+  transition: opacity 0.2s ease;
+  will-change: transform, top, left; /* Performance hint for browser */
 }
 
-/* Zobrazení tooltipu při najetí na rodičovský prvek */
-.has-tooltip:hover .tooltip-text {
+/* Arrow for the tooltip */
+.tooltip-text::after {
+  content: '';
+  position: absolute;
+  /* Use a CSS variable for dynamic positioning from JS */
+  left: var(--arrow-left, 50%); 
+  transform: translateX(-50%);
+  width: 0; 
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+
+  /* Default arrow position (pointing down from tooltip) */
+  top: 100%;
+  border-top: 5px solid #34407a;
+}
+
+/* Class added by JS to show the tooltip */
+.tooltip-text.visible {
   visibility: visible;
   opacity: 1;
 }
 
+/* Class added by JS when tooltip is flipped to be below */
+.tooltip-text.on-bottom::after {
+    top: auto;
+    bottom: 100%;
+    border-top: none;
+    border-bottom: 5px solid #34407a;
+}

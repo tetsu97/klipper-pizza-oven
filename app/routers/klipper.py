@@ -2,6 +2,7 @@
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Body, Request
 from typing import List, Dict, Optional, Any
+import logging
 
 from ..dependencies import get_http_client
 from ..models import GcodeScriptPayload
@@ -13,7 +14,7 @@ router = APIRouter(
 
 @router.get("/printer/print_status")
 async def get_print_status(client: httpx.AsyncClient = Depends(get_http_client)) -> Dict[str, Any]:
-    """Vrátí pouze stav z objektu print_stats."""
+    """Returns only the state from the print_stats object."""
     try:
         r = await client.get("/printer/objects/query?print_stats=state")
         r.raise_for_status()
@@ -26,7 +27,7 @@ async def get_print_status(client: httpx.AsyncClient = Depends(get_http_client))
 @router.get("/status")
 @router.get("/printer/status_ext")
 async def status_ext(client: httpx.AsyncClient = Depends(get_http_client)) -> Dict[str, Any]:
-    """Rozšířený stav tisku s progress/ETA."""
+    """Extended print status with progress/ETA."""
     try:
         q = {
             "display_status": ["progress"],
@@ -56,21 +57,21 @@ async def status_ext(client: httpx.AsyncClient = Depends(get_http_client)) -> Di
 
 @router.post("/console/send")
 async def console_send(payload: GcodeScriptPayload, client: httpx.AsyncClient = Depends(get_http_client)) -> Dict[str, Any]:
-    """Odešle G-code skript do Klipperu."""
+    """Sends a G-code script to Klipper."""
     if not payload.script:
-        raise HTTPException(status_code=400, detail="Příkaz nesmí být prázdný (Script cannot be empty).")
+        raise HTTPException(status_code=400, detail="Script cannot be empty.")
     try:
         r = await client.post("/printer/gcode/script", params={"script": payload.script})
         r.raise_for_status()
         return r.json()
     except httpx.RequestError as e:
-        raise HTTPException(status_code=503, detail=f"Služba Moonraker není dostupná: {e} (Moonraker service unavailable).")
+        raise HTTPException(status_code=503, detail=f"Moonraker service unavailable: {e}")
     except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"Chyba od Klipperu: {e.response.text} (Error from Klipper).")
+        raise HTTPException(status_code=e.response.status_code, detail=f"Error from Klipper: {e.response.text}")
 
 @router.get("/api/temps")
 async def temps_api(client: httpx.AsyncClient = Depends(get_http_client)) -> Dict[str, Dict[str, Optional[float]]]:
-    """Sjednocené teploty ze všech dostupných objektů."""
+    """Unified temperatures from all available objects."""
     try:
         r_list = await client.get("/printer/objects/list")
         r_list.raise_for_status()
@@ -99,14 +100,14 @@ async def temps_api(client: httpx.AsyncClient = Depends(get_http_client)) -> Dic
         return out
         
     except httpx.RequestError as e:
-        # Chyba sítě - Moonraker není dostupný
-        raise HTTPException(status_code=503, detail=f"Služba Moonraker není dostupná: {e} (Moonraker service unavailable).")
+        # Network error - Moonraker is unavailable
+        raise HTTPException(status_code=503, detail=f"Moonraker service unavailable: {e}")
     
     except httpx.HTTPStatusError as e:
-        # Jakákoliv HTTP chyba od Moonrakeru (např. 404, 500)
-        raise HTTPException(status_code=e.response.status_code, detail=f"Chyba od Moonrakeru: {e.response.text}")
+        # Any HTTP error from Moonraker (e.g., 404, 500)
+        raise HTTPException(status_code=e.response.status_code, detail=f"Error from Moonraker: {e.response.text}")
         
     except Exception as e:
-        # Neočekávaná chyba - zalogujeme ji pro ladění
-        logging.error(f"Neočekávaná chyba při získávání teplot: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Neočekávaná chyba serveru: {e} (Unexpected server error).")
+        # Unexpected error - log it for debugging
+        logging.error(f"Unexpected error while fetching temperatures: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Unexpected server error: {e}")

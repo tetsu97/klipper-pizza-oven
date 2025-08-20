@@ -4,7 +4,6 @@
 {% block content %}
 <div class="panel active">
 
-  <!-- Status bar zůstává stejný -->
   {% include "partials/status_bar.html" %}
 
   <h2>Profiles</h2>
@@ -25,7 +24,6 @@
     <tbody></tbody>
   </table>
 
-  <!-- ============ JEDINÝ UNIVERZÁLNÍ MODÁL PRO EDITACI A TVORBU (RESPONZIVNÍ) ============ -->
   <div id="profileEditorModal" class="modal" style="display:none;">
       <div class="modal-content">
         <div class="row space-between align">
@@ -41,7 +39,7 @@
         <div style="margin-top:1rem;">
             <div>
               <label for="programName">Name:</label>
-              <input type="text" id="programName" placeholder="Můj úžasný profil">
+              <input type="text" id="programName" placeholder="My Awesome Profile">
 
               <label for="filamentType">Filament type:</label>
               <input type="text" id="filamentType" placeholder="PC-CF, ABS-CF...">
@@ -59,15 +57,15 @@
                 <div class="row gap">
                   <div class="w-400">
                     <label for="dryingTime" class="has-tooltip">
-                      Drying Time (minuty):
-                      <span class="tooltip-text">Celková doba, po kterou bude pec udržovat cílovou teplotu pro sušení.</span>
+                      Drying Time (minutes):
+                      <span class="tooltip-text">The total time the oven will maintain the target temperature for drying.</span>
                     </label>
                     <input type="number" id="dryingTime" value="300" min="1">
                   </div>
                   <div class="w-400">
                     <label for="dryingTemp" class="has-tooltip">
-                      Temperature Drying (°C):
-                      <span class="tooltip-text">Cílová teplota, na které bude proces sušení probíhat.</span>
+                      Drying Temperature (°C):
+                      <span class="tooltip-text">The target temperature at which the drying process will take place.</span>
                     </label>
                     <input type="number" id="dryingTemp" value="60" min="1">
                   </div>

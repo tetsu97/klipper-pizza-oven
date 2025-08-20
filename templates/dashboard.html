@@ -3,54 +3,50 @@
 
 {% block content %}
 <div class="panel active">
-  <!-- ==== DASHBOARD ==== -->
   <div class="dash">
-    <!-- Status row -->
     <section class="dash-card dash-status" id="dashStatus">
       <div class="dash-status-left">
         <span class="dash-state" id="dashState">—</span>
         <div class="dash-meta">
           <div><span class="muted">Name:</span> <b id="dashFile">—</b></div>
-          <div><span class="muted">Progres:</span> <b id="dashProgressText">0%</b></div>
+          <div><span class="muted">Progress:</span> <b id="dashProgressText">0%</b></div>
           <div><span class="muted">Time:</span> <b id="dashTimes">— / ETA —</b></div>
         </div>
       </div>
       <div class="dash-status-right">
         <div class="dash-emergency">
           <button id="btnFwRestart" type="button" class="has-tooltip">
-            Firmware restart
-            <span class="tooltip-text">Restartuje software Klipperu. Zruší jakýkoliv běžící proces. Používejte opatrně.</span>
+            Firmware Restart
+            <span class="tooltip-text">Restarts the Klipper software. Cancels any running process. Use with caution.</span>
           </button>
           <button id="btnEStop" type="button" class="btn--danger has-tooltip">
-            Emergency stop
-            <span class="tooltip-text">Okamžitě zastaví všechny motory a topení. Ekvivalent příkazu M112.</span>
+            Emergency Stop
+            <span class="tooltip-text">Immediately stops all motors and heaters. Equivalent to the M112 command.</span>
           </button>
         </div>
       </div>
       <div class="dash-progress"><div id="dashProgressBar" style="width:0%"></div></div>
     </section>
 
-    <!-- Grid -->
     <div class="dash-grid">
-      <!-- Job / Files -->
       <section class="dash-card" id="dashJobCard">
         <div class="dash-card-head">
-          <h3 id="dashJobTitle">Actual program</h3>
+          <h3 id="dashJobTitle">Current Program</h3>
           <div id="dashClearStateContainer" style="display: none;">
             <button id="dashClearStateBtn" type="button">Clear Status</button>
           </div>
           <div class="dash-actions" id="dashActions">
             <button id="dashPause" class="has-tooltip">
                 Pause
-                <span class="tooltip-text">Pozastaví aktuální proces.</span>
+                <span class="tooltip-text">Pauses the current process.</span>
             </button>
             <button id="dashResume" class="has-tooltip">
                 Resume
-                <span class="tooltip-text">Obnoví pozastavený proces.</span>
+                <span class="tooltip-text">Resumes the paused process.</span>
             </button>
             <button id="dashCancel" class="danger has-tooltip">
                 Cancel
-                <span class="tooltip-text">Zruší aktuální proces. Tuto akci nelze vrátit zpět.</span>
+                <span class="tooltip-text">Cancels the current process. This action cannot be undone.</span>
             </button>
         </div>
         </div>
@@ -63,15 +59,13 @@
         <div id="dashFileList" class="dash-file-list" hidden>
           <table class="responsive-table">
             <thead>
-              <tr><th>Name</th><th>Last modified</th><th>Size</th></tr>
+              <tr><th>Name</th><th>Last Modified</th><th>Size</th></tr>
             </thead>
             <tbody id="dashRecentFiles"></tbody>
           </table>
         </div>
       </section>
 
-      <!-- Temps -->
-      <!-- OPRAVA: Odstraněn vnořený div a přidána třída "dash-card--temps" -->
       <section class="dash-card dash-card--temps" id="dashTempsCard">
         <div class="dash-card-head"><h3>Temperature</h3></div>
         <table class="temps">
@@ -84,7 +78,6 @@
         </div>
       </section>
 
-      <!-- Mini Console -->
       <section class="dash-card" id="dashConsoleCard">
         <div class="dash-card-head"><h3>Console</h3></div>
         <pre id="dashConsoleLog" class="dash-console" aria-live="polite"></pre>

@@ -1,10 +1,10 @@
-// /static/js/app.js (FINÁLNÍ OPRAVENÁ A KOMPLETNÍ VERZE)
+// /static/js/app.js (FINAL CORRECTED AND COMPLETE VERSION)
 
 let ws = null;
 let reconnectTimer = null;
 let rpcId = 1;
 
-// --- EXPORTOVANÉ FUNKCE A OBJEKTY (pro moduly) ---
+// --- EXPORTED FUNCTIONS AND OBJECTS (for modules) ---
 
 export function sendGcode(script) {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -41,6 +41,97 @@ export const Toast = {
   }
 };
 
+export const AlertModal = {
+  modal: null,
+  titleEl: null,
+  messageEl: null,
+  closeBtn: null,
+  
+  init() {
+    this.modal = document.getElementById('alertModal');
+    if (!this.modal) return;
+    this.titleEl = document.getElementById('alertModalTitle');
+    this.messageEl = document.getElementById('alertModalMessage');
+    this.closeBtn = document.getElementById('alertModalCloseBtn');
+    
+    const hide = () => this.hide();
+    this.closeBtn?.addEventListener('click', hide);
+    this.modal.addEventListener('click', (e) => {
+      if (e.target === this.modal) hide();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && this.modal.style.display === 'flex') {
+            hide();
+        }
+    });
+  },
+
+  show(title, message) {
+    if (!this.modal) this.init();
+    if (!this.modal || !this.titleEl || !this.messageEl) return;
+    
+    this.titleEl.textContent = title;
+    this.messageEl.textContent = message;
+    this.modal.style.display = 'flex';
+  },
+
+  hide() {
+    if (!this.modal) return;
+    this.modal.style.display = 'none';
+  }
+};
+
+export const ConfirmModal = {
+    modal: null,
+    titleEl: null,
+    messageEl: null,
+    okBtn: null,
+    cancelBtn: null,
+    _resolve: null,
+
+    init() {
+        this.modal = document.getElementById('confirmModal');
+        if (!this.modal) return;
+        this.titleEl = document.getElementById('confirmModalTitle');
+        this.messageEl = document.getElementById('confirmModalMessage');
+        this.okBtn = document.getElementById('confirmModalOkBtn');
+        this.cancelBtn = document.getElementById('confirmModalCancelBtn');
+
+        this.okBtn?.addEventListener('click', () => this.hide(true));
+        this.cancelBtn?.addEventListener('click', () => this.hide(false));
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) this.hide(false);
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.modal.style.display === 'flex') {
+                this.hide(false);
+            }
+        });
+    },
+
+    show(title, message) {
+        if (!this.modal) this.init();
+        if (!this.modal) return Promise.resolve(false);
+
+        this.titleEl.textContent = title;
+        this.messageEl.textContent = message;
+        this.modal.style.display = 'flex';
+
+        return new Promise(resolve => {
+            this._resolve = resolve;
+        });
+    },
+
+    hide(result) {
+        if (!this.modal) return;
+        this.modal.style.display = 'none';
+        if (this._resolve) {
+            this._resolve(result);
+            this._resolve = null;
+        }
+    }
+};
+
 export const StartJobModal = {
   modal: null,
   titleEl: null,
@@ -67,13 +158,12 @@ export const StartJobModal = {
     if (!this.modal) this.init();
     this.currentFile = fileName;
     this.titleEl.textContent = fileName;
-    this.durationEl.textContent = 'Načítám...';
+    this.durationEl.textContent = 'Loading...';
     this.modal.style.display = 'flex';
 
     try {
-      // ZMĚNA ZDE: Voláme nový, správný endpoint
       const res = await fetch(`/api/gcodes/${encodeURIComponent(fileName)}`);
-      if (!res.ok) throw new Error('Nepodařilo se načíst data programu.');
+      if (!res.ok) throw new Error('Failed to load program data.');
       const data = await res.json();
       
       const points = data.points || [];
@@ -85,15 +175,14 @@ export const StartJobModal = {
         const m = totalMinutes % 60;
         this.durationEl.textContent = `${h}h ${m}m`;
       } else {
-        this.durationEl.textContent = 'Neznámý';
+        this.durationEl.textContent = 'Unknown';
       }
       this.renderChart(points);
     } catch (e) {
       console.error(e);
-      this.durationEl.textContent = 'Chyba!';
+      this.durationEl.textContent = 'Error!';
       if(this.chart) this.chart.destroy();
     }
-    // Tato část je pro display.js, necháme ji zde pro budoucí použití
     return Promise.resolve(); 
   },
   close() {
@@ -107,11 +196,11 @@ export const StartJobModal = {
   async start() {
     if (!this.currentFile) return;
     try {
-      Toast.show(`Spouštím profil: ${this.currentFile}`, 'info');
+      Toast.show(`Starting profile: ${this.currentFile}`, 'info');
       sendGcode(`LOAD_TEMP_PROGRAM NAME="${this.currentFile}"`);
       setTimeout(() => { sendGcode(`EXECUTE_PROGRAM`); }, 200);
     } catch (err) {
-      Toast.show(`Spuštění selhalo: ${err.message}`, 'error');
+      Toast.show(`Failed to start: ${err.message}`, 'error');
     } finally {
       this.close();
     }
@@ -147,7 +236,7 @@ export const StartJobModal = {
   }
 };
 
-export function showLoadingOverlay(message = 'Pracuji...') {
+export function showLoadingOverlay(message = 'Working...') {
   const overlay = document.getElementById('loadingOverlay');
   const overlayText = document.getElementById('loadingOverlayText');
   if (overlayText) {
@@ -166,39 +255,47 @@ export function hideLoadingOverlay() {
 }
 
 export async function handleFirmwareRestart() {
-  if (!confirm('Opravdu restartovat Klipper firmware?\n(Tím se zruší jakýkoliv běžící proces.)')) return;
+    const confirmed = await ConfirmModal.show(
+      'Firmware Restart',
+      'Are you sure you want to restart the Klipper firmware?\n(This will cancel any running process.)'
+    );
+    if (!confirmed) return;
 
-  showLoadingOverlay('Restartuji Klipper... čekejte prosím.');
-  sendGcode('FIRMWARE_RESTART');
+    showLoadingOverlay('Restarting Klipper... Please wait.');
+    sendGcode('FIRMWARE_RESTART');
 
-  const waitForReady = new Promise((resolve) => {
-    const listener = (event) => {
-      try {
-        const msg = JSON.parse(event.data);
-        if (msg.method === 'notify_klippy_ready') {
-          ws.removeEventListener('message', listener);
-          resolve();
-        }
-      } catch (e) {}
-    };
-    ws.addEventListener('message', listener);
-  });
+    const waitForReady = new Promise((resolve) => {
+        const listener = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                if (msg.method === 'notify_klippy_ready') {
+                    ws.removeEventListener('message', listener);
+                    resolve();
+                }
+            } catch (e) {}
+        };
+        ws.addEventListener('message', listener);
+    });
 
-  const timeout = new Promise(resolve => setTimeout(resolve, 15000));
-  await Promise.race([waitForReady, timeout]);
+    const timeout = new Promise(resolve => setTimeout(resolve, 15000));
+    await Promise.race([waitForReady, timeout]);
 
-  hideLoadingOverlay();
-  Toast.show('Klipper je připraven.', 'success');
+    hideLoadingOverlay();
+    Toast.show('Klipper is ready.', 'success');
 }
 
-export function handleEmergencyStop() {
-  if (!confirm('VÁŽNĚ PROVÉST NOUZOVÉ ZASTAVENÍ?\nTato akce okamžitě zastaví stroj.')) return;
-  sendGcode('M112');
-  Toast.show('NOUZOVÉ ZASTAVENÍ AKTIVOVÁNO!', 'error');
+export async function handleEmergencyStop() {
+    const confirmed = await ConfirmModal.show(
+      'Emergency Stop',
+      'ARE YOU SURE YOU WANT TO PERFORM AN EMERGENCY STOP?\nThis action will immediately halt the machine.'
+    );
+    if (confirmed) {
+        sendGcode('M112');
+        Toast.show('EMERGENCY STOP ACTIVATED!', 'error');
+    }
 }
 
-
-// --- INTERNÍ LOGIKA MODULU ---
+// --- INTERNAL MODULE LOGIC ---
 
 function connectWebSocket() {
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
@@ -255,9 +352,11 @@ function connectWebSocket() {
 function initializeSharedComponents() {
     Toast.init();
     StartJobModal.init();
+    AlertModal.init();
+    ConfirmModal.init();
 }
 
-// --- HLAVNÍ SPUŠTĚNÍ ---
+// --- MAIN EXECUTION ---
 document.addEventListener('DOMContentLoaded', () => {
     connectWebSocket();
     initializeSharedComponents();

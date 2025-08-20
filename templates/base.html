@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
   <meta charset="utf-8"/>
   <title>{% block title %}Klipper PIZZA Oven{% endblock %}</title>
@@ -27,10 +27,10 @@
       </ul>
         <div class="sidebar-footer-actions" >
           <a href="#" id="openSettingsBtn" class="settings-link" title="Settings">
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61-.25-1.17-.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61-.22l2.49 1c.52.4 1.08.73 1.69-.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24" fill="currentColor"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61-.25-1.17-.59-1.69-.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61-.22l2.49 1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
           </a>
         </div>
-        <div id="versionInfo">Alpha v1.0</div>
+        <div id="versionInfo">Alpha v0.8</div>
     </div>
 
     <div class="main">
@@ -42,8 +42,8 @@
   <div id="startJobModal" class="modal" style="display: none;">
     <div class="modal-content" style="max-width: 600px;">
       <div class="row space-between align">
-        <h2 id="startJobModalTitle" style="margin:0; overflow-wrap: break-word;">Spustit program</h2>
-        <button id="startJobModalCloseBtn" style="margin:0;background:#444;">Zavřít</button>
+        <h2 id="startJobModalTitle" style="margin:0; overflow-wrap: break-word;">Start Program</h2>
+        <button id="startJobModalCloseBtn" style="margin:0;background:#444;">Close</button>
       </div>
       <div class="chart-wrap" style="height: 250px; margin-top: 1rem; background: #0f1124;">
         <canvas id="startJobModalChart"></canvas>
@@ -66,6 +66,8 @@
   <div id="toast-container"></div>
 
   {% include "partials/settings_modal.html" %}
+  {% include "partials/alert_modal.html" %}
+  {% include "partials/confirm_modal.html" %}
 
   <script>
     (function(){
@@ -84,6 +86,7 @@
   <script type="module" src="/static/js/components/sidebar-brand.js"></script>
   <script type="module" src="/static/js/components/settings.js"></script>
   <script type="module" src="/static/js/components/statusbar.js"></script>
+  <script type="module" src="/static/js/components/tooltips.js"></script>
 
   {% block page_scripts %}{% endblock %}
 

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="cs">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -27,19 +27,19 @@
                 <span id="currentTemp">--</span>
                 <span class="unit">°C</span>
             </div>
-            <div id="targetTemp" class="target-temp">Cíl: -- °C</div>
+            <div id="targetTemp" class="target-temp">Target: -- °C</div>
         </div>
 
         <div id="progressPanel" class="display-panel progress-panel">
             <div class="progress-info">
-                <span>Průběh</span>
+                <span>Progress</span>
                 <span id="progressPercent">0%</span>
             </div>
             <div class="progress-bar-container">
                 <div id="progressBar" style="width: 0%;"></div>
             </div>
             <div id="timePanel" class="progress-time">
-                <span>Uplynulý čas:</span>
+                <span>Elapsed Time:</span>
                 <span id="statusTime">--:--:--</span>
             </div>
         </div>
@@ -49,12 +49,12 @@
                 <span>Select Profile</span>
             </button>
             <button id="btnActions" class="btn btn-with-icon" style="display: none;">
-                <span>Action</span>
+                <span>Actions</span>
             </button>
             <button id="btnClearStatus" class="btn" style="display: none; grid-column: 1 / -1;">Clear</button>
-            <button id="btnCancel" class="btn btn-danger" style="display: none;">Zrušit</button>
-            <button id="btnPause" class="btn" style="display: none;">Pauza</button>
-            <button id="btnResume" class="btn" style="display: none;">Pokračovat</button>
+            <button id="btnCancel" class="btn btn-danger" style="display: none;">Cancel</button>
+            <button id="btnPause" class="btn" style="display: none;">Pause</button>
+            <button id="btnResume" class="btn" style="display: none;">Resume</button>
         </div>
     </div>
 
@@ -71,7 +71,7 @@
             <button id="actionsCloseBtn" class="actions-close-btn">&times;</button>
             
             <div id="actionsHomeView">
-                <h2>Action</h2>
+                <h2>Actions</h2>
                 <div class="actions-menu-grid">
                     <button id="actionsBtnSetTemp" class="btn">Set Temp</button>
                     <button id="actionsBtnPid" class="btn">PID Calibration</button>
@@ -103,8 +103,8 @@
     <div id="startJobModal" class="modal" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 id="startJobModalTitle" style="margin:0;">Start program</h2>
-                <button id="startJobModalCloseBtn" class="btn">Zavřít</button>
+                <h2 id="startJobModalTitle" style="margin:0;">Start Program</h2>
+                <button id="startJobModalCloseBtn" class="btn">Close</button>
             </div>
 
             <div class="modal-body">

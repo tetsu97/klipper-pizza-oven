@@ -1,5 +1,5 @@
 // /static/js/pages/dashboard.js
-import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergencyStop } from '../app.js'; // <-- IMPORT
+import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergencyStop, ConfirmModal } from '../app.js';
 
 
 (function () {
@@ -335,8 +335,12 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
     function init() {
         $("#dashPause")?.addEventListener("click", () => sendGcode("PAUSE"));
         $("#dashResume")?.addEventListener("click", () => sendGcode("RESUME"));
-        $("#dashCancel")?.addEventListener("click", () => {
-            if (confirm("Opravdu chcete zrušit aktuální proces?")) {
+        $("#dashCancel")?.addEventListener("click", async () => {
+            const confirmed = await ConfirmModal.show(
+                'Zrušit proces',
+                'Opravdu chcete zrušit aktuální proces? Tuto akci nelze vrátit zpět.'
+            );
+            if (confirmed) {
                 sendGcode("CANCEL_PRINT");
             }
         });

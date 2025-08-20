@@ -9,7 +9,7 @@ import logging
 
 from .logging_config import setup_logging
 from .dependencies import lifespan
-from .routers import system, klipper, websocket, update, gcodes, config
+from .routers import system, klipper, websocket, update, gcodes, config, installer
 
 setup_logging()
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -35,6 +35,7 @@ app.include_router(websocket.router)
 app.include_router(update.router)
 app.include_router(gcodes.router)
 app.include_router(config.router)
+app.include_router(installer.router)
 
 @app.get("/", include_in_schema=False)
 async def root() -> RedirectResponse:

@@ -21,6 +21,10 @@
               <span id="diskUsage">Disk: …</span>
               <button id="openCreateFileBtn">Create</button>
               <button id="machineRefreshBtn">Refresh</button>
+              <button id="installPizzaModuleBtn" class="btn has-tooltip" style="background-color: #2e7d32;">
+                Install Oven Module
+                <span class="tooltip-text">Installs and configures an advanced module for oven control. Requires a Klipper restart.</span>
+              </button>
             </div>
           </div>
         </div>
@@ -29,8 +33,8 @@
           <thead>
             <tr>
               <th style="text-align:left;">Name</th>
-              <th>File size</th>
-              <th>Last modified</th>
+              <th>File Size</th>
+              <th>Last Modified</th>
             </tr>
           </thead>
           <tbody></tbody>
@@ -45,11 +49,11 @@
           <div>
             <button id="updRefreshBtn" class="has-tooltip">
               ↻ Refresh
-              <span class="tooltip-text">Znovu zkontroluje dostupné aktualizace.</span>
+              <span class="tooltip-text">Checks for available updates again.</span>
             </button>
             <button id="updAllBtn" class="has-tooltip">
-              Update all
-              <span class="tooltip-text">Aktualizuje všechny komponenty najednou. Může vyžadovat restart.</span>
+              Update All
+              <span class="tooltip-text">Updates all components at once. May require a restart.</span>
             </button>
           </div>
         </div>
@@ -75,7 +79,7 @@
             <div id="sysOs" class="muted">—</div>
           </div>
           <div class="sysloads-col">
-            <div class="syslabel">CPU temp</div>
+            <div class="syslabel">CPU Temp</div>
             <div id="sysCpuTemp" class="muted">—</div>
           </div>
           <div class="sysloads-col">
@@ -91,19 +95,19 @@
   <div id="createFileModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width: 900px;">
       <div class="row space-between align">
-        <h2 style="margin:0;">Create file</h2>
+        <h2 style="margin:0;">Create File</h2>
         <button id="createCloseBtn" style="margin:0;background:#444;">Close</button>
       </div>
 
       <label for="createFilePath" class="has-tooltip">
         File path (relative to config dir):
-        <span class="tooltip-text">Zadejte cestu k souboru včetně podsložek, např. 'macros/moje_makro.cfg'.</span>
+        <span class="tooltip-text">Enter the file path including subdirectories, e.g., 'macros/my_macro.cfg'.</span>
       </label>
       <input id="createFilePath" placeholder="macros/my_macro.cfg">
 
       <label for="createFileContent" class="has-tooltip">
         Content:
-        <span class="tooltip-text">Vložte obsah nového souboru. Můžete nechat prázdné a upravit později.</span>
+        <span class="tooltip-text">Insert the content of the new file. You can leave it empty and edit it later.</span>
       </label>
       <textarea id="createFileContent" spellcheck="false" style="height:280px;"></textarea>
 
@@ -116,13 +120,13 @@
   <div id="editFileModal" class="modal" style="display:none;">
     <div class="modal-content" style="max-width: 1000px;">
       <div class="row space-between align">
-        <h2 style="margin:0;">Edit file</h2>
+        <h2 style="margin:0;">Edit File</h2>
         <button id="editFileCloseBtn" style="margin:0;background:#444;">Close</button>
       </div>
 
       <label for="editFileName" class="has-tooltip">
         File name (relative to config):
-        <span class="tooltip-text">Můžete změnit název souboru a uložit ho jako nový. Původní soubor bude smazán.</span>
+        <span class="tooltip-text">You can change the file name to save it as a new file. The original file will be deleted.</span>
       </label>
       <input id="editFileName" placeholder="macros/my_macro.cfg">
 

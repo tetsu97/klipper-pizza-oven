@@ -1,6 +1,6 @@
 // wapp/static/js/pages/profiles.js
 
-import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode } from '../app.js';
+import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode, ConfirmModal } from '../app.js';
 
 (function () {
   if (!location.pathname.startsWith('/profiles')) return;
@@ -15,7 +15,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
   };
   const humanTime = (ts) => { try { return new Date(ts*1000).toLocaleString(); } catch { return "—"; } };
 
-  // Třídy Modal, ChartView, SegmentsManager (beze změny)
+  // Modal, ChartView, SegmentsManager classes (unchanged)
   class Modal {
       constructor(rootId) { this.root = document.getElementById(rootId); }
       open(){ if (this.root){ this.root.style.display='flex'; } }
@@ -34,18 +34,18 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         this.destroy();
         this.chart = new Chart(ctx, {
             type:'line',
-            data:{ labels, datasets:[{ label:'Teplota (°C)', data:temps, borderColor:'#f44336', backgroundColor:'rgba(244,67,54,.2)', tension:.1, pointRadius:4, fill:true }] },
+            data:{ labels, datasets:[{ label:'Temperature (°C)', data:temps, borderColor:'#f44336', backgroundColor:'rgba(244,67,54,.2)', tension:.1, pointRadius:4, fill:true }] },
             options:{
                 responsive:true,
                 maintainAspectRatio:false,
-                // TATO SEKCE ZAJIŠŤUJE PLYNULÉ ZOBRAZENÍ TOOLTIPU
+                // THIS SECTION ENSURES SMOOTH TOOLTIP DISPLAY
                 interaction: {
                     mode: 'index',
                     intersect: false,
                 },
                 plugins:{
                     legend:{ display: false },
-                    // Tato sekce upravuje vzhled a chování tooltipu
+                    // This section modifies the appearance and behavior of the tooltip
                     tooltip: {
                         backgroundColor: '#2a2a40',
                         titleFont: { size: 14, weight: 'bold' },
@@ -55,17 +55,17 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
                         boxPadding: 4,
                         callbacks: {
                             title: function(tooltipItems) {
-                                return 'Čas: ' + tooltipItems[0].label + ' min';
+                                return 'Time: ' + tooltipItems[0].label + ' min';
                             },
                             label: function(tooltipItem) {
-                                return ' Teplota: ' + tooltipItem.formattedValue + ' °C';
+                                return ' Temperature: ' + tooltipItem.formattedValue + ' °C';
                             }
                         }
                     }
                 },
                 scales:{
-                     x:{ type: 'linear', ticks:{color:'#fff'}, title:{display:true,text:'Čas (minuty)',color:'#fff'} },
-                     y:{ ticks:{color:'#fff'}, title:{display:true,text:'Teplota (°C)',color:'#fff'} }
+                     x:{ type: 'linear', ticks:{color:'#fff'}, title:{display:true,text:'Time (minutes)',color:'#fff'} },
+                     y:{ ticks:{color:'#fff'}, title:{display:true,text:'Temperature (°C)',color:'#fff'} }
                 }
             }
         });
@@ -100,28 +100,28 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         row.className = 'segment-row';
         row.innerHTML = `
             <div class="segment-input-group">
-            <label>Doba náběhu (min)
+            <label>Ramp Time (min)
                 <span class="tooltip-container">
                     <i class="tooltip-icon">?</i>
-                    <span class="tooltip-text">Čas v minutách, za který má pec dosáhnout cílové teploty tohoto segmentu.</span>
+                    <span class="tooltip-text">Time in minutes for the oven to reach the target temperature of this segment.</span>
                 </span>
             </label>
             <input type="number" class="seg-ramptime" value="${defaults.ramp_time || 60}" min="1" step="1">
             </div>
             <div class="segment-input-group">
-            <label>Doba držení (min)
+            <label>Hold Time (min)
                 <span class="tooltip-container">
                     <i class="tooltip-icon">?</i>
-                    <span class="tooltip-text">Čas v minutách, po který má pec udržovat cílovou teplotu po jejím dosažení.</span>
+                    <span class="tooltip-text">Time in minutes for the oven to maintain the target temperature after reaching it.</span>
                 </span>
             </label>
             <input type="number" class="seg-holdtime" value="${defaults.hold_time || 0}" min="0" step="1">
             </div>
             <div class="segment-input-group">
-            <label>Cílová teplota (°C)
+            <label>Target Temperature (°C)
                  <span class="tooltip-container">
                     <i class="tooltip-icon">?</i>
-                    <span class="tooltip-text">Teplota ve stupních Celsia, které má být v tomto segmentu dosaženo.</span>
+                    <span class="tooltip-text">The temperature in degrees Celsius to be reached in this segment.</span>
                 </span>
             </label>
             <input type="number" class="seg-temp" value="${defaults.temp ?? lastTemp}" min="0" step="1">
@@ -155,10 +155,10 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         body: JSON.stringify({ name })
       });
       if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + await r.text());
-      Toast.show(`Spouštím profil: ${name}`, 'info');
+      Toast.show(`Starting profile: ${name}`, 'info');
     },
 
-    // OPRAVA: Používá Query parametr dle nového API
+    // CORRECTION: Uses Query parameter according to the new API
     async remove(name){
         const r = await fetch(`/api/gcodes/?name=${encodeURIComponent(name)}`, {
             method:'DELETE'
@@ -241,7 +241,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         const { programType, programName, segments, dryingTime, dryingTemp } = this.state;
         const isAnnealing = programType === 'annealing';
         
-        $('#editorTitle').textContent = 'Vytvořit Profil';
+        $('#editorTitle').textContent = 'Create Profile';
         $('#programName').value = programName;
         $('#dryingTime').value = dryingTime;
         $('#dryingTemp').value = dryingTemp;
@@ -264,12 +264,12 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
     async save() {
         const programName = this._buildFileName();
         if (!programName) {
-            return Toast.show('Zadejte prosím platný název profilu.', 'info');
+            return Toast.show('Please enter a valid profile name.', 'info');
         }
         
-        showLoadingOverlay(`Ukládám profil '${programName}'...`);
+        showLoadingOverlay(`Saving profile '${programName}'...`);
 
-        // OPRAVA: Připravíme payload pro nový endpoint
+        // CORRECTION: Prepare the payload for the new endpoint
         const payload = {
             name: programName,
             filament_type: this.state.filamentType,
@@ -280,7 +280,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         };
 
         try {
-            // ZMĚNA: Cesta je nyní /api/gcodes/save
+            // CHANGE: The path is now /api/gcodes/save
             const response = await fetch('/api/gcodes/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -295,18 +295,18 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
             const result = await response.json();
 
             hideLoadingOverlay();
-            Toast.show(`Profil '${result.name}' úspěšně uložen.`, 'success');
+            Toast.show(`Profile '${result.name}' successfully saved.`, 'success');
             this.modal.close();
             if (this._reloadCallback) await this._reloadCallback();
 
         } catch (e) {
             hideLoadingOverlay();
-            Toast.show(`Ukládání selhalo: ${e.message}`, 'error');
+            Toast.show(`Save failed: ${e.message}`, 'error');
         }
     }
   }
 
-  // --- Hlavní logika stránky ---
+  // --- Main page logic ---
   const ProfilesPage = {
     editor: null,
     contextMenu: null,
@@ -342,7 +342,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
     async loadList() {
         const tbody = $('#profilesTable tbody');
         if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Načítám…</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading…</td></tr>';
         try {
             const data = await ProfilesService.list();
             const files = data?.files || [];
@@ -360,7 +360,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
                 tbody.appendChild(tr);
             });
         } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Nepodařilo se načíst profily.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Failed to load profiles.</td></tr>';
         }
     },
 
@@ -370,8 +370,8 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         menu.id = 'profilesContextMenu';
         menu.className = 'context-menu';
         menu.innerHTML = `
-            <li><button data-act="start">Spustit</button></li>
-            <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Smazat</button></li>
+            <li><button data-act="start">Start</button></li>
+            <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Delete</button></li>
         `;
         document.body.appendChild(menu);
         this.contextMenu = menu;
@@ -400,14 +400,15 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
                 StartJobModal.open(name);
             }
             if (act === 'delete') {
-                if (confirm(`Opravdu smazat profil: ${name}?`)) {
+                const confirmed = await ConfirmModal.show('Delete Profile', `Are you sure you want to delete the profile: ${name}?`);
+                if (confirmed) {
                     await ProfilesService.remove(name);
-                    Toast.show(`Profil ${name} smazán.`, 'success');
+                    Toast.show(`Profile ${name} deleted.`, 'success');
                     await this.loadList();
                 }
             }
         } catch (err) {
-            Toast.show(`Akce selhala: ${err.message}`, 'error');
+            Toast.show(`Action failed: ${err.message}`, 'error');
         }
     },
   };

@@ -1,7 +1,7 @@
 // /static/js/pages/machine.js
 
-// Importujeme sdílené funkce z app.js
-import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
+// Import shared functions from app.js
+import { Toast, showLoadingOverlay, hideLoadingOverlay, AlertModal, ConfirmModal } from '../app.js';
 
 (function () {
   if (!location.pathname.startsWith('/machine')) return;
@@ -105,8 +105,8 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
               a.click();
               URL.revokeObjectURL(a.href);
           } else if (act === 'delete') {
-              if (!confirm(`Smazat soubor: ${name}?`)) return;
-              // Použijeme query parametr, jak backend nyní očekává
+              if (!confirm(`Delete file: ${name}?`)) return;
+              // Use query parameter as the backend now expects
               const r = await fetch(`/api/config/delete-file?name=${encodeURIComponent(name)}`, {
                   method: 'DELETE'
               });
@@ -114,7 +114,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
               await loadMachineFiles();
           }
       } catch (err) {
-          Toast.show('Akce selhala: ' + (err?.message || err), 'error');
+          Toast.show('Action failed: ' + (err?.message || err), 'error');
       }
   }
   
@@ -164,7 +164,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
     if (!ta) return;
 
     if (cmCreate) {
-        cmCreate.toTextArea(); // Bezpečně odstraní starou instanci
+        cmCreate.toTextArea(); // Safely remove the old instance
     }
 
     cmCreate = window.CodeMirror.fromTextArea(ta, {
@@ -186,7 +186,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
     const name = ($('#createFilePath').value || '').trim();
     const content = cmCreate ? cmCreate.getValue() : ($('#createFileContent').value || '');
     if (!name) {
-      Toast.show('Zadej název souboru.', 'info');
+      Toast.show('Please enter a file name.', 'info');
       return;
     }
 
@@ -199,11 +199,11 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
         if (!r2.ok) throw new Error('HTTP ' + r2.status + ' ' + await r2.text());
       }
       
-      Toast.show(`Soubor ${name} vytvořen.`, 'success');
+      Toast.show(`File ${name} created.`, 'success');
       closeCreateModal();
       await loadMachineFiles();
     } catch (e) {
-      Toast.show('Vytvoření selhalo: ' + (e?.message || e), 'error');
+      Toast.show('Creation failed: ' + (e?.message || e), 'error');
     }
   }
 
@@ -230,7 +230,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
       openEditModal();
 
       if (cm) {
-          cm.toTextArea(); // Bezpečně odstraní starou instanci
+          cm.toTextArea(); // Safely remove the old instance
       }
 
       cm = window.CodeMirror.fromTextArea(ta, {
@@ -241,7 +241,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
       cm.setSize('100%', '60vh');
       setTimeout(() => cm && cm.refresh(), 50);
     } catch (e) {
-      Toast.show('Otevření souboru selhalo: ' + (e?.message || e), 'error');
+      Toast.show('Failed to open file: ' + (e?.message || e), 'error');
     }
   }
 
@@ -249,7 +249,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
     const nameInput = $('#editFileName');
     const targetName = (nameInput?.value || '').trim();
     if (!targetName) {
-      Toast.show('Zadej název souboru.', 'info');
+      Toast.show('Please enter a file name.', 'info');
       return;
     }
 
@@ -274,7 +274,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
 
         editingOriginalName = targetName;
         editingName = targetName;
-        Toast.show('Soubor přejmenován a uložen.', 'success');
+        Toast.show('File renamed and saved.', 'success');
       } else {
         const r = await fetch('/api/config/file', {
           method: 'POST',
@@ -282,7 +282,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
           body: JSON.stringify({ name: targetName, content })
         });
         if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + await r.text());
-        Toast.show('Uloženo', 'success');
+        Toast.show('Saved', 'success');
       }
 
       closeEditModal();
@@ -292,7 +292,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
     }
   }
 
-  // ===== Update manager (pouze version_info → klipper/moonraker) =====
+  // ===== Update manager (only version_info → klipper/moonraker) =====
     function normalizeVersion(v) {
     if (!v) return v;
     let s = String(v).trim();
@@ -304,7 +304,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
   async function refreshUpdates() {
     const tb = $('#updateTable tbody');
     if (!tb) return;
-    showLoadingOverlay('Načítám stav aktualizací...');
+    showLoadingOverlay('Loading update status...');
 
     tb.innerHTML = '<tr><td colspan="5" style="text-align:center;opacity:.7;">Loading…</td></tr>';
 
@@ -372,7 +372,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
           if (!r2.ok) throw new Error('HTTP ' + r2.status + ' ' + await r2.text());
           await refreshUpdates();
         } catch (err) {
-          Toast.show('Update selhal: ' + (err?.message || err), 'error');
+          Toast.show('Update failed: ' + (err?.message || err), 'error');
         } finally {
           b.disabled = false;
         }
@@ -392,7 +392,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
       if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + await r.text());
       await refreshUpdates();
     } catch (e) {
-      Toast.show('Update všech selhal: ' + (e?.message || e), 'error');
+      Toast.show('Update all failed: ' + (e?.message || e), 'error');
     } finally { const btn = $('#updAllBtn'); if (btn) btn.disabled = false; }
   }
 
@@ -406,6 +406,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
     $('#editFileSaveBtn')?.addEventListener('click', saveEditor);
     $('#updRefreshBtn')?.addEventListener('click', refreshUpdates);
     $('#updAllBtn')?.addEventListener('click', updateAll);
+    $('#installPizzaModuleBtn')?.addEventListener('click', installOvenModule);
 
     const tbody = $('#machineTable tbody');
     if (tbody) {
@@ -431,6 +432,99 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
     document.addEventListener('click', _hideMachineContextMenu);
   }
 
+  async function checkOvenModuleStatus() {
+      const btn = $('#installPizzaModuleBtn');
+      if (!btn) return;
+      btn.disabled = true; // Prevent clicking during the check
+
+      try {
+          const response = await fetch('/api/installer/status');
+          if (!response.ok) {
+              btn.textContent = 'Install Module'; // In case of API error
+              return;
+          }
+          const data = await response.json();
+
+          // New main check: does a valid Klipper installation exist?
+          if (!data.klipper_path_valid) {
+              btn.textContent = 'Klipper Not Found';
+              btn.style.backgroundColor = '#616161'; // Gray color
+              const tooltip = btn.querySelector('.tooltip-text');
+              if (tooltip) tooltip.textContent = 'The standard printer_data/config directory was not found. Ensure Klipper is correctly installed.';
+              // The button remains disabled (disabled = true)
+              return;
+          }
+          
+          // The rest of the logic is executed only if Klipper is found
+          if (data.installed) {
+              btn.textContent = 'Module Installed';
+              btn.style.backgroundColor = '#1f3a2e'; // Darker green
+              const tooltip = btn.querySelector('.tooltip-text');
+              if (tooltip) tooltip.textContent = 'The module is installed. Click to reinstall it.';
+          } else {
+              btn.textContent = 'Install Oven Module';
+              btn.style.backgroundColor = '#2e7d32'; // Original green
+              const tooltip = btn.querySelector('.tooltip-text');
+              if (tooltip) tooltip.textContent = 'Installs and configures the advanced module for oven control. Requires a Klipper restart.';
+          }
+          btn.disabled = false; // Enable the button
+
+      } catch (error) {
+          console.error('Error checking module status:', error);
+          btn.textContent = 'Error Checking Status';
+          btn.style.backgroundColor = '#c62828'; // Red color for error
+      }
+  }
+
+  async function installOvenModule() {
+      const isInstalled = $('#installPizzaModuleBtn')?.textContent.includes('Installed');
+      const message = isInstalled
+          ? 'The module seems to be already installed. Do you want to reinstall it? This will overwrite the existing module files.'
+          : 'Are you sure you want to install the oven module? This will modify your configuration files and will require a Klipper restart.';
+
+      const confirmed = await ConfirmModal.show(
+          isInstalled ? 'Reinstall Module' : 'Install Module',
+          message
+      );
+
+      if (!confirmed) {
+          return;
+      }
+
+      showLoadingOverlay('Installing oven module...');
+      try {
+          const response = await fetch('/api/installer/install_pizza_oven_module', {
+              method: 'POST'
+          });
+
+          if (!response.ok) {
+              let errorDetail = `HTTP ${response.status}: ${response.statusText}`;
+              try {
+                  const errData = await response.json();
+                  errorDetail = errData.detail || errorDetail;
+              } catch (e) { /* Response was not JSON */ }
+              throw new Error(errorDetail);
+          }
+
+          const result = await response.json();
+          hideLoadingOverlay();
+          
+          Toast.show(result.message || 'Module successfully installed!', 'success');
+          
+          const formattedMessage = (result.actions || []).join('\n- ');
+          AlertModal.show(
+            'Installation Complete',
+            'The following steps were performed:\n\n- ' + formattedMessage + '\n\nA Klipper firmware restart is required to activate the changes.'
+          );
+          
+          await checkOvenModuleStatus();
+
+      } catch (err) {
+          hideLoadingOverlay();
+          Toast.show('Installation failed: ' + err.message, 'error');
+      }
+  }
+
   function init() {
     _createMachineContextMenu();
     bindUI();
@@ -438,6 +532,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay } from '../app.js';
     loadDiskUsage();
     loadSystemHost();
     refreshUpdates();
+    checkOvenModuleStatus();
 
     let tMem = setInterval(loadSystemHost, 10000);
     document.addEventListener('visibilitychange', () => {

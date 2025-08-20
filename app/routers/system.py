@@ -17,7 +17,7 @@ router = APIRouter(
 )
 
 def _get_network_info() -> List[Dict[str, str]]:
-    """Získá informace o aktivních síťových rozhraních (bezpečnější verze)."""
+    """Gets information about active network interfaces (safer version)."""
     if not psutil:
         return []
     
@@ -49,14 +49,14 @@ def _get_network_info() -> List[Dict[str, str]]:
                     "type": conn_type
                 })
     except Exception as e:
-        logging.error(f"Chyba při zjišťování stavu sítě pomocí psutil: {e}", exc_info=True)
+        logging.error(f"Error getting network status using psutil: {e}", exc_info=True)
         return []
 
     return interfaces
 
 @router.get("/system/host")
 async def system_host() -> Dict[str, Any]:
-    """Vrací informace o hostitelském systému (OS, RAM, CPU, síť)."""
+    """Returns information about the host system (OS, RAM, CPU, network)."""
     os_name = platform.platform()
     mem_total = mem_used = None
     if psutil:
@@ -90,5 +90,5 @@ def _disk_usage_json(path: str = "/") -> Dict[str, Any]:
 
 @router.get("/disk")
 def get_disk() -> Dict[str, Any]:
-    """Vrací informace o využití disku pro kořenový adresář."""
+    """Returns disk usage information for the root directory."""
     return _disk_usage_json("/")
