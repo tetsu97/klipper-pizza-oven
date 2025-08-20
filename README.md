@@ -10,10 +10,10 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 
 ---
 
-| Desktop | Mobile |
-| :---: | :---: |
-| ![Dashboard View](/docs/images/preview1.png) | ![Profiles View](./docs/images/preview2.png) |
-| ![Profiles View](./docs/images/preview3.png) |
+| Desktop | Mobile | Display with browser in kiosk mode |
+| :---: | :---: | :---: |
+| ![Dashboard View](/docs/images/preview1.png) | ![Profiles View](./docs/images/preview2.png) | ![Profiles View](./docs/images/preview3.png) |
+
 
 ---
 
@@ -23,7 +23,7 @@ The application is built on a **FastAPI** backend and communicates with Klipper 
 * **📂 Profile Management:** Easily create, manage, and start custom heating profiles for both multi-segment annealing and single-temperature filament drying.
 * **📈 Interactive Charts:** Get a visual preview of the temperature curve during profile creation and monitor live temperature data on the dashboard.
 * **⌨️ Console:** Send G-code commands directly to Klipper and view real-time responses in the console log.
-* **📱 Fully Responsive & Touch-Friendly:** Control your oven from any device—desktop, tablet, or mobile. Includes a dedicated full-screen interface (/display) for small touchscreens.
+* **📱 Fully Responsive & Touch-Friendly:** Control your oven from any device—desktop, mobile or display with browser in kiosk mode. Includes a dedicated full-screen interface (/display) for small touchscreens.
 * **📝 File Manager & Editor:** A built-in editor on the "Machine" page allows you to create, edit, and delete Klipper configuration files (printer.cfg, macros, etc.) directly from the web interface.
 * **⚙️ Machine & System Management:** View system vitals like CPU temperature and memory usage, manage Klipper/Moonraker updates, and install the required Klipper module with a single click.
 
