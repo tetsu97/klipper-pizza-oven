@@ -57,6 +57,28 @@ This project is actively developed. Here are some of the features and improvemen
 
 ---
 
+## 🚀 Quick Installation (Raspberry Pi OS / Debian)
+
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/tetsu97/klipper-pizza-oven.git](https://github.com/tetsu97/klipper-pizza-oven.git)
+    cd klipper-pizza-oven
+    ```
+
+2.  **Make the installation script executable:**
+    ```bash
+    chmod +x install.sh
+    ```
+
+3.  **Run the installation script:**
+    ```bash
+    ./install.sh
+    ```
+
+The script will automatically install dependencies, set up the Python environment, and configure the application to run as a service that starts on boot.
+
+---
+
 ## 🤝 Contributing
 
 Have an idea for an improvement or found a bug? Feel free to create an *Issue* or send a *Pull Request*. All contributions are welcome!

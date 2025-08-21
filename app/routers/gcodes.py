@@ -5,14 +5,12 @@ import httpx
 from fastapi import APIRouter, HTTPException, Query, Depends, Path as FastApiPath
 from typing import Any, Dict, List
 
-# CHANGE: Import GCODES_DIR instead of CONFIG_DIR from settings
 from .. import settings
 from ..utils import is_safe_child, make_safe_filename
 from ..dependencies import get_http_client
 from ..models import GcodeSavePayload, FileNamePayload
 from ..settings import AMBIENT_TEMP
 
-# CHANGE: Use GCODES_DIR as the base directory for profiles
 GCODES_DIR = Path(settings.GCODES_DIR).resolve()
 
 router = APIRouter(
@@ -28,15 +26,21 @@ async def list_profiles() -> Dict[str, List[Dict[str, Any]]]:
         logging.warning(f"G-codes directory not found: {GCODES_DIR}")
         return {"files": []}
     
-    # The logic remains the same, just the directory changes
     for p in sorted(GCODES_DIR.glob("pizza_*.cfg")):
         try:
             stat = p.stat()
             profile_name = p.name.replace("pizza_", "", 1).replace(".cfg", "", 1)
+            # Simple parsing for filament type from file content
+            content = p.read_text(encoding="utf-8").strip()
+            filament_type = None
+            if "filament_type" in content: # Placeholder for more robust parsing if needed
+                 # A simple way to extract it might be added here if the format is consistent
+                 pass
             files.append({
                 "name": profile_name, 
                 "size": stat.st_size, 
-                "mtime": int(stat.st_mtime)
+                "mtime": int(stat.st_mtime),
+                "filament_type": filament_type
             })
         except Exception as e:
             logging.error(f"Failed to process profile file {p.name}: {e}", exc_info=True)
@@ -45,7 +49,7 @@ async def list_profiles() -> Dict[str, List[Dict[str, Any]]]:
 
 @router.get("/{name}")
 async def get_profile_details(name: str = FastApiPath(..., description="Name of the profile to load")):
-    """Loads the details and segments of a single profile for UI display."""
+    """Loads the details, segments, and chart points of a single profile."""
     safe_name = make_safe_filename(name)
     file_name = f"pizza_{safe_name}.cfg"
     path = GCODES_DIR / file_name
@@ -58,13 +62,14 @@ async def get_profile_details(name: str = FastApiPath(..., description="Name of 
         lines = content.split('\n')
         
         points = []
+        segments = [] # NEW: We will now also return the raw segments
         current_time_min = 0
         previous_temp = AMBIENT_TEMP
         
         points.append({"time": 0, "temp": previous_temp})
         
         for i, line in enumerate(lines):
-            if not line.strip():
+            if not line.strip() or line.startswith('#'):
                 continue
             
             parts = line.split(":")
@@ -72,8 +77,16 @@ async def get_profile_details(name: str = FastApiPath(..., description="Name of 
                 logging.warning(f"Skipping invalid line in profile {safe_name}: {line}")
                 continue
 
-            temp, ramp_time_sec, hold_time_sec, _ = map(float, parts)
+            temp, ramp_time_sec, hold_time_sec, method = map(float, parts)
+            
+            # Add segment data for the editor
+            segments.append({
+                "ramp_time": round(ramp_time_sec / 60),
+                "hold_time": round(hold_time_sec / 60),
+                "temp": temp
+            })
 
+            # Logic for chart points remains the same
             if i > 0 and temp != previous_temp:
                  points.append({"time": round(current_time_min, 2), "temp": previous_temp})
 
@@ -89,12 +102,14 @@ async def get_profile_details(name: str = FastApiPath(..., description="Name of 
         if len(points) > 1 and points[0]['time'] == points[1]['time'] and points[0]['temp'] == points[1]['temp']:
             points.pop(0)
 
-        return {"name": safe_name, "points": points}
+        # Return both points for the chart and segments for the editor
+        return {"name": safe_name, "points": points, "segments": segments, "filament_type": None}
 
     except Exception as e:
         logging.error(f"Error parsing profile {safe_name}: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error reading profile file: {e}")
 
+# ... (the rest of the file remains unchanged)
 async def _send_gcode(client: httpx.AsyncClient, script: str):
     """Helper function to send G-code."""
     try:
@@ -124,6 +139,7 @@ async def save_profile(payload: GcodeSavePayload):
     elif payload.mode == "drying" and payload.drying_temp and payload.drying_time:
         hold_time_sec = payload.drying_time * 60
         temp = payload.drying_temp
+        # ramp time for drying can be minimal, e.g., 1 second.
         profile_content.append(f"{temp}:1:{hold_time_sec}:1")
     else:
          raise HTTPException(status_code=400, detail="Missing data to create profile.")

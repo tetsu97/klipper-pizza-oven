@@ -15,7 +15,6 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
   };
   const humanTime = (ts) => { try { return new Date(ts*1000).toLocaleString(); } catch { return "—"; } };
 
-  // Modal, ChartView, SegmentsManager classes (unchanged)
   class Modal {
       constructor(rootId) { this.root = document.getElementById(rootId); }
       open(){ if (this.root){ this.root.style.display='flex'; } }
@@ -26,9 +25,10 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
     constructor(canvasSel){ this.canvasSel = canvasSel; this.chart = null; }
     _ctx(){ const c=$(this.canvasSel); return c? c.getContext('2d') : null; }
     destroy(){ try{ this.chart?.destroy(); }catch{} this.chart=null; }
-    render(points, startTemp = 25){
+    render(points){ // CHANGE: Removed the startTemp parameter
         const ctx=this._ctx(); if (!ctx) return;
-        const pts = [{time: 0, temp: startTemp}, ...points].sort((a,b) => a.time - b.time);
+        // The points array is now expected to be complete, including the starting point.
+        const pts = points.sort((a,b) => a.time - b.time);
         const labels = pts.map(p => p.time);
         const temps  = pts.map(p => p.temp);
         this.destroy();
@@ -38,14 +38,12 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
             options:{
                 responsive:true,
                 maintainAspectRatio:false,
-                // THIS SECTION ENSURES SMOOTH TOOLTIP DISPLAY
                 interaction: {
                     mode: 'index',
                     intersect: false,
                 },
                 plugins:{
                     legend:{ display: false },
-                    // This section modifies the appearance and behavior of the tooltip
                     tooltip: {
                         backgroundColor: '#2a2a40',
                         titleFont: { size: 14, weight: 'bold' },
@@ -148,6 +146,13 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
   
   const ProfilesService = {
     async list(){ const r=await fetch('/api/gcodes/',{cache:'no-store'}); if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); },
+    
+    async getDetails(name) {
+        const r = await fetch(`/api/gcodes/${encodeURIComponent(name)}`, {cache:'no-store'});
+        if(!r.ok) throw new Error('HTTP '+r.status + ' ' + await r.text());
+        return r.json();
+    },
+
     async start(name){
       const r = await fetch('/api/gcodes/start', {
         method: 'POST',
@@ -158,7 +163,6 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
       Toast.show(`Starting profile: ${name}`, 'info');
     },
 
-    // CORRECTION: Uses Query parameter according to the new API
     async remove(name){
         const r = await fetch(`/api/gcodes/?name=${encodeURIComponent(name)}`, {
             method:'DELETE'
@@ -197,12 +201,43 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
             mode: 'create',
             programType: 'annealing',
             programName: '',
+            filamentType: '',
             segments: [],
             dryingTime: 300,
             dryingTemp: 60,
         };
         this.updateUiFromState();
         this.modal.open();
+    }
+
+    async openForEdit(name) {
+        try {
+            showLoadingOverlay(`Loading profile '${name}'...`);
+            const data = await ProfilesService.getDetails(name);
+            hideLoadingOverlay();
+            
+            if (!data.segments) {
+                throw new Error("Profile data is missing 'segments' information.");
+            }
+
+            const isDrying = data.segments.length === 1 && data.segments[0].ramp_time <= 1 && data.segments[0].hold_time > 0;
+
+            this.state = {
+                mode: 'edit',
+                programType: isDrying ? 'drying' : 'annealing',
+                programName: data.name,
+                filamentType: data.filament_type || '',
+                segments: isDrying ? [] : data.segments,
+                dryingTime: isDrying ? data.segments[0].hold_time : 300,
+                dryingTemp: isDrying ? data.segments[0].temp : 60,
+            };
+
+            this.updateUiFromState();
+            this.modal.open();
+        } catch(e) {
+            hideLoadingOverlay();
+            Toast.show(`Failed to load profile for editing: ${e.message}`, 'error');
+        }
     }
 
     setProgramType(type) {
@@ -212,6 +247,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
 
     onUiChange() {
         this.state.programName = $('#programName').value;
+        this.state.filamentType = $('#filamentType').value;
         this.state.segments = this.segManager.read();
         this.state.dryingTime = toInt($('#dryingTime').value);
         this.state.dryingTemp = toInt($('#dryingTemp').value);
@@ -222,29 +258,49 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         if (this.state.programType === 'annealing') {
             const points = [];
             let currentTime = 0;
+            let lastTemp = 25; // Start from ambient
+            points.push({ time: 0, temp: 25 }); // Always add the starting point
+
             this.state.segments.forEach(seg => {
+                if (seg.temp !== lastTemp) {
+                    points.push({ time: currentTime, temp: lastTemp });
+                }
                 currentTime += seg.ramp_time;
                 points.push({ time: currentTime, temp: seg.temp });
                 if (seg.hold_time > 0) {
                     currentTime += seg.hold_time;
                     points.push({ time: currentTime, temp: seg.temp });
                 }
+                lastTemp = seg.temp;
             });
-            this.chart.render(points, 25);
-        } else {
-            const points = [{ time: this.state.dryingTime, temp: this.state.dryingTemp }];
-            this.chart.render(points, this.state.dryingTemp);
+            this.chart.render(points);
+        } else { // Drying mode
+            // For drying, we create a simple horizontal line at the target temperature
+            const points = [
+                { time: 0, temp: this.state.dryingTemp },
+                { time: this.state.dryingTime, temp: this.state.dryingTemp }
+            ];
+            // We pass this array directly, without any ambient temp point
+            this.chart.render(points);
         }
     }
     
     updateUiFromState() {
-        const { programType, programName, segments, dryingTime, dryingTemp } = this.state;
+        const { mode, programType, programName, filamentType, segments, dryingTime, dryingTemp } = this.state;
         const isAnnealing = programType === 'annealing';
         
-        $('#editorTitle').textContent = 'Create Profile';
+        $('#editorTitle').textContent = mode === 'edit' ? `Edit Profile: ${programName}` : 'Create Profile';
         $('#programName').value = programName;
+        $('#filamentType').value = filamentType;
         $('#dryingTime').value = dryingTime;
         $('#dryingTemp').value = dryingTemp;
+        
+        $('#programName').disabled = (mode === 'edit');
+
+        const switcher = $('#editorModeSwitcher');
+        if (switcher) {
+            switcher.style.display = (mode === 'create') ? 'flex' : 'none';
+        }
 
         this.segManager.load(segments);
 
@@ -257,8 +313,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
     }
 
     _buildFileName() {
-        const name = this.state.programName || '';
-        return name.trim();
+        return (this.state.programName || '').trim();
     }
 
     async save() {
@@ -269,7 +324,6 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         
         showLoadingOverlay(`Saving profile '${programName}'...`);
 
-        // CORRECTION: Prepare the payload for the new endpoint
         const payload = {
             name: programName,
             filament_type: this.state.filamentType,
@@ -280,7 +334,6 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         };
 
         try {
-            // CHANGE: The path is now /api/gcodes/save
             const response = await fetch('/api/gcodes/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -371,6 +424,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         menu.className = 'context-menu';
         menu.innerHTML = `
             <li><button data-act="start">Start</button></li>
+            <li><button data-act="edit">Edit</button></li>
             <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Delete</button></li>
         `;
         document.body.appendChild(menu);
@@ -398,6 +452,9 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         try {
             if (act === 'start') {
                 StartJobModal.open(name);
+            }
+            if (act === 'edit') {
+                this.editor.openForEdit(name);
             }
             if (act === 'delete') {
                 const confirmed = await ConfirmModal.show('Delete Profile', `Are you sure you want to delete the profile: ${name}?`);
