@@ -79,17 +79,17 @@ The script will automatically install dependencies, set up the Python environmen
 
 ---
 
-## 🤝 Contributing
-
-Have an idea for an improvement or found a bug? Feel free to create an *Issue* or send a *Pull Request*. All contributions are welcome!
-
----
-
 ## 🙏 Acknowledgements
 
 A special thank you to user voidtrance for writing the initial pizza_oven.py Klipper module.
 
 Huge thanks to everyone on the Voron Discord server for their continuous help and support.
+
+---
+
+## 🤝 Contributing
+
+Have an idea for an improvement or found a bug? Feel free to create an *Issue* or send a *Pull Request*. All contributions are welcome!
 
 ---
 
