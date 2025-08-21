@@ -262,6 +262,7 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 #chart, #editPointsChart{ width:100% !important; height:auto !important; }
 #gcodeOutput{ width:100%; box-sizing:border-box; }
 
+#gcodeEditorModal .CodeMirror,
 #editFileModal .CodeMirror,
 #createFileModal .CodeMirror{
   background:#0f1124; color:#e6e9ff; border:1px solid #242a4f; border-radius:10px;

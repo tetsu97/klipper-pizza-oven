@@ -1,5 +1,7 @@
 # app/routers/gcodes.py
 import logging
+import json
+import re
 from pathlib import Path
 import httpx
 from fastapi import APIRouter, HTTPException, Query, Depends, Path as FastApiPath
@@ -9,38 +11,45 @@ from .. import settings
 from ..utils import is_safe_child, make_safe_filename
 from ..dependencies import get_http_client
 from ..models import GcodeSavePayload, FileNamePayload
-from ..settings import AMBIENT_TEMP
 
 GCODES_DIR = Path(settings.GCODES_DIR).resolve()
+PROFILE_PREFIX = "oven_"
 
 router = APIRouter(
     prefix="/api/gcodes",
     tags=["gcodes"],
 )
 
+def _parse_metadata(content: str) -> Dict[str, Any]:
+    """Parses a JSON metadata line from G-code comments."""
+    try:
+        for line in content.splitlines():
+            if line.strip().startswith("; METADATA:"):
+                json_str = line.replace("; METADATA:", "").strip()
+                return json.loads(json_str)
+    except Exception:
+        pass
+    return {}
+
 @router.get("/")
 async def list_profiles() -> Dict[str, List[Dict[str, Any]]]:
-    """Lists saved profiles (pizza_*.cfg files from the gcodes directory)."""
+    """Lists saved profiles (oven_*.gcode files from the gcodes directory)."""
     files: List[Dict[str, Any]] = []
     if not GCODES_DIR.exists():
         logging.warning(f"G-codes directory not found: {GCODES_DIR}")
         return {"files": []}
     
-    for p in sorted(GCODES_DIR.glob("pizza_*.cfg")):
+    for p in sorted(GCODES_DIR.glob(f"{PROFILE_PREFIX}*.gcode")):
         try:
             stat = p.stat()
-            profile_name = p.name.replace("pizza_", "", 1).replace(".cfg", "", 1)
-            # Simple parsing for filament type from file content
-            content = p.read_text(encoding="utf-8").strip()
-            filament_type = None
-            if "filament_type" in content: # Placeholder for more robust parsing if needed
-                 # A simple way to extract it might be added here if the format is consistent
-                 pass
+            content = p.read_text(encoding="utf-8", errors="ignore")
+            metadata = _parse_metadata(content)
+            profile_name = p.name.replace(PROFILE_PREFIX, "", 1).replace(".gcode", "", 1)
             files.append({
-                "name": profile_name, 
+                "name": profile_name,
+                "filament_type": metadata.get("filament_type"),
                 "size": stat.st_size, 
-                "mtime": int(stat.st_mtime),
-                "filament_type": filament_type
+                "mtime": int(stat.st_mtime)
             })
         except Exception as e:
             logging.error(f"Failed to process profile file {p.name}: {e}", exc_info=True)
@@ -49,130 +58,132 @@ async def list_profiles() -> Dict[str, List[Dict[str, Any]]]:
 
 @router.get("/{name}")
 async def get_profile_details(name: str = FastApiPath(..., description="Name of the profile to load")):
-    """Loads the details, segments, and chart points of a single profile."""
+    """Loads raw G-code, metadata, and chart points for a single profile."""
     safe_name = make_safe_filename(name)
-    file_name = f"pizza_{safe_name}.cfg"
+    file_name = f"{PROFILE_PREFIX}{safe_name}.gcode"
     path = GCODES_DIR / file_name
 
     if not (is_safe_child(path, GCODES_DIR) and path.is_file()):
         raise HTTPException(status_code=404, detail=f"Profile '{safe_name}' not found.")
 
     try:
-        content = path.read_text(encoding="utf-8").strip()
-        lines = content.split('\n')
+        content = path.read_text(encoding="utf-8", errors="ignore")
+        metadata = _parse_metadata(content)
         
         points = []
-        segments = [] # NEW: We will now also return the raw segments
-        current_time_min = 0
-        previous_temp = AMBIENT_TEMP
+        current_time_min = 0.0
+        last_temp = settings.AMBIENT_TEMP
+
+        is_drying = metadata.get("type") == "drying"
         
-        points.append({"time": 0, "temp": previous_temp})
+        raw_segments = []
+        add_segment_regex = re.compile(r"ADD_SEGMENT\s+TEMP=([0-9.]+)\s+RAMP_TIME=([0-9.]+)\s+HOLD_TIME=([0-9.]+)", re.IGNORECASE)
+        for line in content.splitlines():
+            match = add_segment_regex.match(line.strip())
+            if match:
+                raw_segments.append({
+                    "temp": float(match.group(1)),
+                    "ramp_time": float(match.group(2)),
+                    "hold_time": float(match.group(3))
+                })
         
-        for i, line in enumerate(lines):
-            if not line.strip() or line.startswith('#'):
-                continue
-            
-            parts = line.split(":")
-            if len(parts) != 4:
-                logging.warning(f"Skipping invalid line in profile {safe_name}: {line}")
-                continue
-
-            temp, ramp_time_sec, hold_time_sec, method = map(float, parts)
-            
-            # Add segment data for the editor
-            segments.append({
-                "ramp_time": round(ramp_time_sec / 60),
-                "hold_time": round(hold_time_sec / 60),
-                "temp": temp
-            })
-
-            # Logic for chart points remains the same
-            if i > 0 and temp != previous_temp:
-                 points.append({"time": round(current_time_min, 2), "temp": previous_temp})
-
-            current_time_min += ramp_time_sec / 60
-            points.append({"time": round(current_time_min, 2), "temp": temp})
-            
-            if hold_time_sec > 0:
-                current_time_min += hold_time_sec / 60
+        if is_drying and raw_segments:
+            drying_temp = raw_segments[0]["temp"]
+            drying_duration_min = raw_segments[0]["hold_time"] / 60
+            points.append({"time": 0, "temp": drying_temp})
+            points.append({"time": round(drying_duration_min, 2), "temp": drying_temp})
+        else: # Annealing
+            points.append({"time": 0, "temp": last_temp})
+            for seg in raw_segments:
+                temp = seg["temp"]
+                ramp_time_min = seg["ramp_time"] / 60
+                hold_time_min = seg["hold_time"] / 60
+                
+                if temp != last_temp:
+                    points.append({"time": round(current_time_min, 2), "temp": last_temp})
+                
+                current_time_min += ramp_time_min
                 points.append({"time": round(current_time_min, 2), "temp": temp})
-            
-            previous_temp = temp
+                
+                if hold_time_min > 0:
+                    current_time_min += hold_time_min
+                    points.append({"time": round(current_time_min, 2), "temp": temp})
+                
+                last_temp = temp
 
-        if len(points) > 1 and points[0]['time'] == points[1]['time'] and points[0]['temp'] == points[1]['temp']:
-            points.pop(0)
-
-        # Return both points for the chart and segments for the editor
-        return {"name": safe_name, "points": points, "segments": segments, "filament_type": None}
+        return {
+            "name": safe_name,
+            "gcode": content,
+            "metadata": metadata,
+            "points": points
+        }
 
     except Exception as e:
-        logging.error(f"Error parsing profile {safe_name}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Error reading profile file: {e}")
-
-# ... (the rest of the file remains unchanged)
-async def _send_gcode(client: httpx.AsyncClient, script: str):
-    """Helper function to send G-code."""
-    try:
-        r = await client.post("/printer/gcode/script", params={"script": script})
-        r.raise_for_status()
-        return r.json()
-    except httpx.RequestError as e:
-        raise HTTPException(status_code=503, detail=f"Moonraker service unavailable: {e}")
-    except httpx.HTTPStatusError as e:
-        raise HTTPException(status_code=e.response.status_code, detail=f"Error from Klipper: {e.response.text}")
+        logging.error(f"Error processing profile {safe_name}: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error reading or parsing profile file: {e}")
 
 @router.post("/save")
-async def save_profile(payload: GcodeSavePayload):
-    """Builds and directly saves the profile file to the gcodes directory."""
+async def save_profile_gcode(payload: GcodeSavePayload):
     safe_name = make_safe_filename(payload.name)
     if not safe_name:
         raise HTTPException(status_code=400, detail="Invalid program name.")
 
-    profile_content = []
-    if payload.mode == "annealing" and payload.points:
-        for seg in payload.points:
-            ramp_time_sec = (seg.get('ramp_time') or 60) * 60
-            hold_time_sec = (seg.get('hold_time') or 0) * 60
-            temp = seg.get('temp') or 25
-            method_code = 1 
-            profile_content.append(f"{temp}:{ramp_time_sec}:{hold_time_sec}:{method_code}")
-    elif payload.mode == "drying" and payload.drying_temp and payload.drying_time:
-        hold_time_sec = payload.drying_time * 60
-        temp = payload.drying_temp
-        # ramp time for drying can be minimal, e.g., 1 second.
-        profile_content.append(f"{temp}:1:{hold_time_sec}:1")
-    else:
-         raise HTTPException(status_code=400, detail="Missing data to create profile.")
+    if not payload.gcode:
+        raise HTTPException(status_code=400, detail="G-code content cannot be empty.")
 
-    file_name = f"pizza_{safe_name}.cfg"
+    metadata = {
+        "name": payload.program_name or safe_name,
+        "filament_type": payload.filament_type,
+        "type": payload.mode,
+        "version": 1.0
+    }
+    
+    header = f"; METADATA: {json.dumps(metadata)}\n"
+    gcode_body = "\n".join([line for line in payload.gcode.splitlines() if not line.strip().startswith("; METADATA:")])
+    full_content = header + gcode_body
+
+    file_name = f"{PROFILE_PREFIX}{safe_name}.gcode"
     path = GCODES_DIR / file_name
 
     if not is_safe_child(path, GCODES_DIR):
          raise HTTPException(status_code=400, detail="Invalid file path.")
+    
     try:
-        path.write_text("\n".join(profile_content) + "\n", encoding="utf-8")
-        logging.info(f"Profile was successfully saved to file: {path}")
+        path.write_text(full_content, encoding="utf-8")
+        logging.info(f"Profile successfully saved to file: {path}")
     except Exception as e:
         logging.error(f"Failed to save profile {safe_name}: {e}")
         raise HTTPException(status_code=500, detail=f"Error while saving file: {e}")
         
     return {"ok": True, "name": safe_name}
 
+
 @router.post("/start")
 async def start_profile(payload: FileNamePayload, client: httpx.AsyncClient = Depends(get_http_client)):
-    """Starts the selected profile (LOAD_PROGRAM, EXECUTE_PROGRAM)."""
     safe_name = make_safe_filename(payload.name)
-    await _send_gcode(client, f'LOAD_PROGRAM NAME="{safe_name}"')
-    await _send_gcode(client, 'EXECUTE_PROGRAM')
-    return {"ok": True}
+    file_to_print = f"{PROFILE_PREFIX}{safe_name}.gcode"
+    
+    path = GCODES_DIR / file_to_print
+    if not (is_safe_child(path, GCODES_DIR) and path.is_file()):
+        raise HTTPException(status_code=404, detail=f"Profile file '{file_to_print}' not found.")
+
+    script = f'SDCARD_PRINT_FILE FILENAME="{file_to_print}"'
+    
+    try:
+        r = await client.post("/printer/gcode/script", params={"script": script})
+        r.raise_for_status()
+        return {"ok": True, "response": r.json()}
+    except httpx.RequestError as e:
+        raise HTTPException(status_code=503, detail=f"Moonraker service unavailable: {e}")
+    except httpx.HTTPStatusError as e:
+        raise HTTPException(status_code=e.response.status_code, detail=f"Error from Klipper: {e.response.text}")
 
 @router.delete("/")
 async def delete_profile(name: str = Query(...)) -> Dict[str, bool]:
-    """Deletes the profile file."""
     if not name or ".." in name or "/" in name:
         raise HTTPException(status_code=400, detail="Invalid file name.")
     
-    file_name = f"pizza_{make_safe_filename(name)}.cfg"
+    file_name = f"{PROFILE_PREFIX}{make_safe_filename(name)}.gcode"
     path = GCODES_DIR / file_name
     
     if not (is_safe_child(path, GCODES_DIR) and path.is_file()):

@@ -132,28 +132,27 @@ export const ConfirmModal = {
     }
 };
 
+// Replace the existing StartJobModal object in static/js/app.js
 export const StartJobModal = {
-  modal: null,
-  titleEl: null,
-  durationEl: null,
-  confirmBtn: null,
-  chartCanvas: null,
-  chart: null,
-  currentFile: null,
+  modal: null, titleEl: null, durationEl: null, confirmBtn: null,
+  chartCanvas: null, chart: null, currentFile: null,
+
   init() {
     this.modal = document.getElementById('startJobModal');
+    if (!this.modal) return;
     this.titleEl = document.getElementById('startJobModalTitle');
     this.durationEl = document.getElementById('startJobModalDuration');
     this.confirmBtn = document.getElementById('startJobModalConfirmBtn');
     this.chartCanvas = document.getElementById('startJobModalChart');
     const closeBtn = document.getElementById('startJobModalCloseBtn');
-    if (!this.modal) return;
+    
     closeBtn?.addEventListener('click', () => this.close());
     this.confirmBtn?.addEventListener('click', () => this.start());
     this.modal.addEventListener('click', (e) => {
       if (e.target === this.modal) this.close();
     });
   },
+
   async open(fileName) {
     if (!this.modal) this.init();
     this.currentFile = fileName;
@@ -167,12 +166,11 @@ export const StartJobModal = {
       const data = await res.json();
       
       const points = data.points || [];
+      const totalMinutes = points.length > 0 ? points[points.length - 1].time : 0;
 
-      if (points.length > 0) {
-        const lastPoint = points[points.length - 1];
-        const totalMinutes = lastPoint.time || 0;
+      if (totalMinutes > 0) {
         const h = Math.floor(totalMinutes / 60);
-        const m = totalMinutes % 60;
+        const m = Math.round(totalMinutes % 60);
         this.durationEl.textContent = `${h}h ${m}m`;
       } else {
         this.durationEl.textContent = 'Unknown';
@@ -183,8 +181,8 @@ export const StartJobModal = {
       this.durationEl.textContent = 'Error!';
       if(this.chart) this.chart.destroy();
     }
-    return Promise.resolve(); 
   },
+
   close() {
     if (!this.modal) return;
     this.modal.style.display = 'none';
@@ -193,18 +191,24 @@ export const StartJobModal = {
       this.chart = null;
     }
   },
+
   async start() {
     if (!this.currentFile) return;
     try {
+      const r = await fetch('/api/gcodes/start', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name: this.currentFile })
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}: ${await r.text()}`);
       Toast.show(`Starting profile: ${this.currentFile}`, 'info');
-      sendGcode(`LOAD_TEMP_PROGRAM NAME="${this.currentFile}"`);
-      setTimeout(() => { sendGcode(`EXECUTE_PROGRAM`); }, 200);
     } catch (err) {
       Toast.show(`Failed to start: ${err.message}`, 'error');
     } finally {
       this.close();
     }
   },
+  
   renderChart(points) {
     if (this.chart) this.chart.destroy();
     if (!this.chartCanvas) return;
@@ -213,18 +217,10 @@ export const StartJobModal = {
     const temps = points.map(p => p.temp);
     this.chart = new Chart(ctx, {
       type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Temperature (°C)',
-          data: temps,
-          borderColor: '#f44336',
-          backgroundColor: 'rgba(244,67,54,.2)',
-          tension: .1,
-          pointRadius: 4,
-          fill: true
-        }]
-      },
+      data: { labels, datasets: [{
+          label: 'Temperature (°C)', data: temps, borderColor: '#f44336',
+          backgroundColor: 'rgba(244,67,54,.2)', tension: .1, pointRadius: 4, fill: true
+      }]},
       options: {
         responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
         scales: {

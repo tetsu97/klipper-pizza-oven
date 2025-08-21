@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Profiles · Klipper PIZZA Oven{% endblock %}
 
+{% block head_extra %}
+  {# FIX: Add CodeMirror CSS files required for the editor to render correctly #}
+  <link rel="stylesheet" href="/static/vendor/codemirror/lib/codemirror.css">
+  <link rel="stylesheet" href="/static/vendor/codemirror/theme/material-darker.css">
+{% endblock %}
+
 {% block content %}
 <div class="panel active">
 
@@ -30,54 +36,40 @@
           <h2 id="editorTitle" style="margin:0;">Create Profile</h2>
           <button id="editorCloseBtn" class="btn">Close</button>
         </div>
-
-        <div id="editorModeSwitcher" class="row gap-small" style="margin-top:.5rem;">
+        <div id="editorModeSwitcher" class="row gap-small" style="margin-top:.5rem; display: none;">
           <button id="btn-annealing" class="btn active">Annealing</button>
           <button id="btn-drying" class="btn">Drying</button>
         </div>
-
         <div style="margin-top:1rem;">
             <div>
               <label for="programName">Name:</label>
               <input type="text" id="programName" placeholder="My Awesome Profile">
-
               <label for="filamentType">Filament type:</label>
               <input type="text" id="filamentType" placeholder="PC-CF, ABS-CF...">
-              
               <div id="annealingInputs">
                 <h3 style="margin:.8rem 0 .4rem;">Segments</h3>
-                <div id="segmentsList" class="segments-list">
-                  </div>
+                <div id="segmentsList" class="segments-list"></div>
                 <div class="centered-row">
                   <button id="addSegmentBtn" class="btn">Add Segment</button>
                 </div>
               </div>
-
               <div id="dryingInputs" style="display:none;">
                 <div class="row gap">
                   <div class="w-400">
-                    <label for="dryingTime" class="has-tooltip">
-                      Drying Time (minutes):
-                      <span class="tooltip-text">The total time the oven will maintain the target temperature for drying.</span>
-                    </label>
+                    <label for="dryingTime" class="has-tooltip">Drying Time (minutes):<span class="tooltip-text">The total time the oven will maintain the target temperature for drying.</span></label>
                     <input type="number" id="dryingTime" value="300" min="1">
                   </div>
                   <div class="w-400">
-                    <label for="dryingTemp" class="has-tooltip">
-                      Drying Temperature (°C):
-                      <span class="tooltip-text">The target temperature at which the drying process will take place.</span>
-                    </label>
+                    <label for="dryingTemp" class="has-tooltip">Drying Temperature (°C):<span class="tooltip-text">The target temperature at which the drying process will take place.</span></label>
                     <input type="number" id="dryingTemp" value="60" min="1">
                   </div>
                 </div>
               </div>
             </div>
-            
             <div class="chart-wrap" style="margin-top: 1.5rem;">
                 <canvas id="editorChart"></canvas>
             </div>
         </div>
-        
         <div class="actions-right" style="margin-top: 1.5rem;">
           <button id="editorCancelBtn" class="btn">Cancel</button>
           <button id="editorSaveBtn" class="btn btn--primary">Save to Klipper</button>
@@ -85,14 +77,33 @@
       </div>
   </div>
 
+  <div id="gcodeEditorModal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width: 1000px;">
+      <div class="row space-between align">
+        <h2 id="gcodeEditorTitle" style="margin:0;">Edit G-code</h2>
+        <button id="gcodeEditorCloseBtn" style="margin:0;background:#444;">Close</button>
+      </div>
+      <p style="margin: .5rem 0 1rem; color: #aeb8d3; font-style: italic;">Editing raw G-code. Changes will not be reflected in the visual editor.</p>
+      <textarea id="gcodeEditorTextarea" spellcheck="false" style="height:60vh;"></textarea>
+      <div class="actions-right">
+        <button id="gcodeEditorSaveBtn">Save G-code</button>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
 
 {% block vendor_scripts %}
   <script src="/static/vendor/chartjs/chart.js"></script>
+  <script src="/static/vendor/codemirror/lib/codemirror.js"></script>
+  <script src="/static/vendor/codemirror/addon/overlay.js"></script>
+  <script src="/static/vendor/codemirror/mode/properties/properties.js"></script>
+  <script src="/static/vendor/codemirror/mode/klipper.js"></script>
 {% endblock %}
 
 {% block page_scripts %}
-  {{ super() }} <script type="module" src="/static/js/pages/profiles.js"></script>
+  {{ super() }} 
+  <script type="module" src="/static/js/pages/profiles.js"></script>
   <script type="module" src="/static/js/components/statusbar.js"></script>
 {% endblock %}
