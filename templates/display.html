@@ -60,7 +60,7 @@
 
     <div id="profileScreen" class="screen">
         <div class="header">
-            <h2>Select Profile</h2>
+            <h2>Select Program</h2>
             <button id="btnBack" class="btn">&times;</button>
         </div>
         <div id="profileList" class="profile-list"></div>
@@ -122,11 +122,21 @@
             </div>
         </div>
     </div>
+
+    <div id="loadingOverlay" style="display: none;">
+        <div class="spinner"></div>
+        <p id="loadingOverlayText">Working...</p>
+    </div>
     
     {% include "partials/settings_modal.html" %}
+    {% include "partials/alert_modal.html" %}
+    {% include "partials/confirm_modal.html" %}
+    {% include "partials/prompt_modal.html" %}
 
     <script src="/static/vendor/chartjs/chart.js"></script>
     <script type="module" src="/static/js/app.js" defer></script>
     <script type="module" src="/static/js/pages/display.js" defer></script>
+    <script type="module" src="/static/js/components/settings.js"></script>
+    <script type="module" src="/static/js/components/power_controls.js"></script>
 </body>
 </html>

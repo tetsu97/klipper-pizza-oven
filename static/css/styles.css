@@ -282,11 +282,11 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   margin:0 0 1rem; line-height:1.05; width:fit-content;
   -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
 }
-.brand-main{ display:block; font-weight:900; font-size:26px; letter-spacing:0 }
-.brand-sub { display:block; font-weight:700; font-size:14px; letter-spacing:.12em; text-transform:uppercase; color:#cfd3e0 }
+.brand-main{ display:block; font-weight:900; font-size:31px; letter-spacing:0 } /* Zvětšeno z 26px */
+.brand-sub { display:block; font-weight:700; font-size:17px; letter-spacing:.12em; text-transform:uppercase; color:#cfd3e0 } /* Zvětšeno z 14px */
 
 .brand--stack .brand-main::after{
-  content:""; display:block; height:3px; border-radius:2px; margin-top:4px;
+  content:""; display:block; height:4px; border-radius:2px; margin-top:5px; /* Zvětšena výška a odsazení */
   background: linear-gradient(90deg, #5b86ff, #f44336);
 }
 .brand--stack .brand-sub{ text-align:right; margin-top:6px; }
@@ -306,8 +306,8 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
 .brand--bar .brand-sub{ margin-top:4px; color:#d7daea; }
 
 @media (max-width:980px){
-  .brand-main{ font-size:24px }
-  .brand-sub { font-size:13px }
+  .brand-main{ font-size:29px }
+  .brand-sub { font-size:16px }
 }
 
 .sidebar h1.brand{
@@ -676,7 +676,29 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
   /* --- Responzivní tabulky --- */
   .responsive-table thead { display: none; }
   .responsive-table tr { display: block; margin-bottom: 1.25rem; border-radius: 8px; border: 1px solid #262a45; background: #171a2e; padding: 0.5rem; }
-  .responsive-table td { display: flex; justify-content: space-between; align-items: center; text-align: right; padding: 0.75rem 0.5rem; border-bottom: 1px solid #2a2a40; }
+  .responsive-table td {
+    display: block; /* Změna z flex na block */
+    text-align: right; /* Hodnota bude vpravo */
+    padding: 0.75rem 0.5rem;
+    border-bottom: 1px solid #2a2a40;
+    clear: both; /* Zajistí správné obtékání */
+  }
+
+  .responsive-table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    text-align: left;
+    color: #aeb8d3;
+    margin-right: 1rem;
+    float: left; /* Klíčová změna: "plave" vlevo */
+  }
+
+  /* Speciální pravidlo pro buňku se jménem zůstává téměř stejné */
+  .responsive-table .name-cell {
+    display: block;
+    text-align: left;
+    font-weight: bold;
+  }
   .responsive-table tr td:last-of-type { border-bottom: none; }
   .responsive-table td::before { content: attr(data-label); font-weight: bold; text-align: left; color: #aeb8d3; margin-right: 1rem; }
   .responsive-table .name-cell { display: block; text-align: left; }
@@ -1019,4 +1041,133 @@ canvas{ width:100% !important; height:auto !important; max-height:400px; }
     bottom: 100%;
     border-top: none;
     border-bottom: 5px solid #34407a;
+}
+
+/* ... (předchozí kód v souboru) */
+
+/* Sjednocená třída pro tabulky se soubory */
+.file-list-table td:last-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  white-space: nowrap;
+}
+
+.file-list-table td:last-child button {
+  margin-top: 0;
+  margin-right: 0;
+  height: 32px;
+  line-height: 1;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-list-table tbody tr td {
+  vertical-align: middle;
+}
+
+.file-list-table .name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.file-list-table .name-cell .gthumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  background: #0e1022;
+  border: 1px solid #2a2f55;
+  object-fit: cover;
+  flex: 0 0 auto; /* Zabrání zmenšování obrázku */
+  transition: opacity .15s ease;
+  opacity: 1; /* Vždy viditelný, pokud je přítomen */
+}
+
+/* Specifické úpravy pro tlačítka v profiles, pokud je třeba */
+#profilesTable td.btns {
+  display: table-cell !important;
+  vertical-align: middle;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+#profilesTable td.btns .btns-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+#profilesTable td.btns .btns-wrap button {
+  margin-top: 0;
+}
+
+#machineTable thead th:first-child,
+#profilesTable thead th:first-child {
+  text-align: left;
+}
+
+#machineTable th:nth-child(2),
+#profilesTable th:nth-child(2),
+#machineTable td:nth-child(2),
+#profilesTable td:nth-child(2) {
+  text-align: center;
+}
+
+/* === Dashboard styles (clean & fluid) === */
+.dash { display: flex; flex-direction: column; gap: 12px; }
+.dash-card { background: #171a2e; border: 1px solid #262a45; border-radius: 12px; padding: 12px; }
+
+/* Status Bar */
+.dash-status { display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "left right" "progress progress"; gap: 12px; align-items: center; }
+.dash-status-left { grid-area: left; min-width: 0; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.dash-state { padding: 4px 10px; border-radius: 999px; font-weight: 600; }
+.dash-meta { display: flex; gap: 14px; flex-wrap: wrap; min-width: 0; align-items: center; }
+.dash-status-right { grid-area: right; justify-self: end; }
+.dash-progress { grid-area: progress; height: 8px; background: #252c52; border-radius: 999px; overflow: hidden; margin-top: 4px; }
+.dash-progress > #dashProgressBar { height: 100%; background: #5b86ff; transition: width .2s; }
+.dash-emergency { display: flex; gap: 8px; align-items: center; }
+
+/* Grid Karet */
+.dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 12px; }
+
+/* Hlavička karty */
+.dash-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.dash-card-head h3 { margin: 0; }
+.dash-card-head .dash-actions { margin-left: auto; }
+#dashClearStateContainer { margin-left: auto; }
+
+/* Karta "Actual Program" */
+.dash-job-detail { display: flex; gap: 16px; align-items: center; }
+.dash-preview { width: clamp(160px, 18vw, 200px); height: clamp(120px, 13vw, 150px); background: #0e1022; border: 1px solid #2a2f55; border-radius: 10px; display: flex; align-items: center; justify-content: center; color: #6a7390; position: relative; overflow: hidden; flex-shrink: 0; }
+.dash-preview .dash-preview-img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.dash-kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-content: start; }
+
+/* Karta "Temperature" */
+.dash-temps-layout { display: grid; grid-template-columns: minmax(220px, auto) 1fr; gap: 12px; align-items: start; }
+.temps { table-layout: fixed; }
+.chart-wrap { height: clamp(220px, 30vh, 280px); background: #10132a; border: 1px solid #242a4f; border-radius: 10px; padding: 6px; }
+
+/* Karta "Console" */
+.dash-console { height: 160px; background: #0f1124; border: 1px solid #242a4f; border-radius: 10px; padding: 8px; overflow: auto; white-space: pre-wrap; font-family: ui-monospace, monospace; }
+.dash-console-input { margin-top: 8px; display: flex; gap: 8px; align-items: center; }
+
+/* OPRAVA: Spolehlivé skrytí karty */
+#dashJobDetail[hidden] {
+    display: none;
+}
+
+@media (max-width: 980px) {
+  .dash-status { grid-template-columns: 1fr; grid-template-areas: "right" "left" "progress"; align-items: start; }
+  .dash-meta { font-size: 0.9rem; }
+  .dash-temps-layout { grid-template-columns: 1fr; }
+}
+
+#dashTempsCard .temps th,
+#dashTempsCard .temps td {
+  text-align: center;
 }

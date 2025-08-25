@@ -2,6 +2,7 @@
 
 // Import shared functions from app.js
 import { Toast, showLoadingOverlay, hideLoadingOverlay, AlertModal, ConfirmModal } from '../app.js';
+import { humanSize, humanTime } from '../utils.js';
 
 (function () {
   if (!location.pathname.startsWith('/machine')) return;
@@ -13,15 +14,6 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, AlertModal, ConfirmModal
   let cmCreate = null;
   let editingName = null;
   let editingOriginalName = null;
-
-  // ===== Helpers =====
-  function humanSize(bytes) {
-    if (bytes == null) return "—";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} kB`;
-    return `${(bytes/1024/1024).toFixed(2)} MB`;
-  }
-  function humanTime(ts) { try { return new Date(ts*1000).toLocaleString(); } catch { return "—"; } }
 
   // ===== Disk + System =====
   function humanGB(bytes) {
@@ -105,12 +97,17 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, AlertModal, ConfirmModal
               a.click();
               URL.revokeObjectURL(a.href);
           } else if (act === 'delete') {
-              if (!confirm(`Delete file: ${name}?`)) return;
-              // Use query parameter as the backend now expects
+              const confirmed = await ConfirmModal.show(
+                  'Delete File',
+                  `Are you sure you want to permanently delete the file: ${name}?`
+              );
+              if (!confirmed) return;
+              
               const r = await fetch(`/api/config/delete-file?name=${encodeURIComponent(name)}`, {
                   method: 'DELETE'
               });
               if (!r.ok) throw new Error('HTTP ' + r.status);
+              Toast.show(`File ${name} deleted.`, 'success'); // Přidáme i notifikaci o úspěchu
               await loadMachineFiles();
           }
       } catch (err) {
@@ -292,6 +289,66 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, AlertModal, ConfirmModal
     }
   }
 
+  function bindUpload() {
+    const uploadBtn = $('#uploadFileBtn');
+    const fileInput = $('#fileUploadInput');
+    if (!uploadBtn || !fileInput) return;
+
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // Zpracování vybraných souborů
+    fileInput.addEventListener('change', async (event) => {
+      const files = event.target.files;
+      if (!files.length) return;
+
+      showLoadingOverlay(`Uploading ${files.length} file(s)...`);
+
+      const uploadPromises = Array.from(files).map(file => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              const content = e.target.result;
+              const payload = {
+                name: file.name,
+                content: content
+              };
+              
+              const response = await fetch('/api/config/file', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              });
+
+              if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to upload ${file.name}: ${errorText}`);
+              }
+              resolve(file.name);
+            } catch (error) {
+              reject(error);
+            }
+          };
+          reader.onerror = () => reject(new Error(`Failed to read file ${file.name}`));
+          reader.readAsText(file);
+        });
+      });
+
+      try {
+        const results = await Promise.all(uploadPromises);
+        Toast.show(`Successfully uploaded ${results.length} file(s).`, 'success');
+      } catch (error) {
+        Toast.show(error.message, 'error');
+      } finally {
+        hideLoadingOverlay();
+        loadMachineFiles(); // Obnovíme seznam souborů
+        event.target.value = ''; // Vyresetujeme input, aby bylo možné nahrát stejný soubor znovu
+      }
+    });
+  }
+
   // ===== Update manager (only version_info → klipper/moonraker) =====
     function normalizeVersion(v) {
     if (!v) return v;
@@ -407,6 +464,8 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, AlertModal, ConfirmModal
     $('#updRefreshBtn')?.addEventListener('click', refreshUpdates);
     $('#updAllBtn')?.addEventListener('click', updateAll);
     $('#installPizzaModuleBtn')?.addEventListener('click', installOvenModule);
+
+    bindUpload();
 
     const tbody = $('#machineTable tbody');
     if (tbody) {

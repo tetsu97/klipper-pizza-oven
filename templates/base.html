@@ -7,7 +7,6 @@
   <meta name="google" content="notranslate">
 
   <link rel="stylesheet" href="/static/css/styles.css">
-  <link rel="stylesheet" href="/static/css/dashboard.css">
 
   {% block head_extra %}{% endblock %}
 </head>
@@ -68,6 +67,7 @@
   {% include "partials/settings_modal.html" %}
   {% include "partials/alert_modal.html" %}
   {% include "partials/confirm_modal.html" %}
+  {% include "partials/prompt_modal.html" %}
 
   <script>
     (function(){
@@ -87,6 +87,7 @@
   <script type="module" src="/static/js/components/settings.js"></script>
   <script type="module" src="/static/js/components/statusbar.js"></script>
   <script type="module" src="/static/js/components/tooltips.js"></script>
+  <script type="module" src="/static/js/components/power_controls.js"></script>
 
   {% block page_scripts %}{% endblock %}
 

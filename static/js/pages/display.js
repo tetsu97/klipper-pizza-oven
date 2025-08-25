@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const status = event.detail;
         if (!status) return;
 
-        const oven = status['heater_generic pizza_oven'];
+        const oven = status['pizza_oven'];
         const currentTemp = oven?.temperature;
         const targetTemp = oven?.target;
         currentTempEl.textContent = (currentTemp != null) ? currentTemp.toFixed(0) : '--';

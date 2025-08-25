@@ -69,7 +69,7 @@ async def console_send(payload: GcodeScriptPayload, client: httpx.AsyncClient = 
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=f"Error from Klipper: {e.response.text}")
 
-@router.get("/api/temps")
+@router.get("/temps")
 async def temps_api(client: httpx.AsyncClient = Depends(get_http_client)) -> Dict[str, Dict[str, Optional[float]]]:
     """Unified temperatures from all available objects."""
     try:
@@ -79,7 +79,7 @@ async def temps_api(client: httpx.AsyncClient = Depends(get_http_client)) -> Dic
 
         wanted = [
             obj for obj in obj_list 
-            if obj in ("extruder", "heater_bed") or obj.startswith(("heater_generic ", "temperature_sensor "))
+            if obj in ("extruder", "heater_bed", "pizza_oven") or obj.startswith(("heater_generic ", "temperature_sensor "))
         ]
         
         if not wanted:

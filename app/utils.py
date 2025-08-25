@@ -2,7 +2,7 @@
 import re
 from pathlib import Path
 
-SAFE_FILENAME_RE = re.compile(r"[A-Za-z0-9._ -]+")
+SAFE_FILENAME_RE = re.compile(r"[A-Za-z0-9._ ()-]+")
 
 def make_safe_filename(name: str, default: str = "program") -> str:
     """Očistí název souboru od nebezpečných znaků."""
@@ -11,9 +11,8 @@ def make_safe_filename(name: str, default: str = "program") -> str:
     name = name.strip()
     parts = SAFE_FILENAME_RE.findall(name)
     cleaned = "".join(parts).strip()
-    # OPRAVA: Explicitně odstraníme nebezpečné sekvence teček
     cleaned = re.sub(r'\.{2,}', '', cleaned)
-    cleaned = cleaned.strip('.') # Odstraníme i tečky na začátku/konci
+    cleaned = cleaned.strip('.')
     return cleaned or default
 
 def ensure_gcode_extension(filename: str) -> str:

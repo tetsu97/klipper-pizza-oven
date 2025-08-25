@@ -132,6 +132,61 @@ export const ConfirmModal = {
     }
 };
 
+export const PromptModal = {
+    modal: null,
+    titleEl: null,
+    messageEl: null,
+    inputEl: null,
+    okBtn: null,
+    cancelBtn: null,
+    _resolve: null,
+
+    init() {
+        this.modal = document.getElementById('promptModal');
+        if (!this.modal) return;
+        this.titleEl = document.getElementById('promptModalTitle');
+        this.messageEl = document.getElementById('promptModalMessage');
+        this.inputEl = document.getElementById('promptModalInput');
+        this.okBtn = document.getElementById('promptModalOkBtn');
+        this.cancelBtn = document.getElementById('promptModalCancelBtn');
+
+        this.okBtn?.addEventListener('click', () => this.hide(this.inputEl.value));
+        this.cancelBtn?.addEventListener('click', () => this.hide(null));
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) this.hide(null);
+        });
+        this.inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.hide(this.inputEl.value);
+            if (e.key === 'Escape') this.hide(null);
+        });
+    },
+
+    show(title, message, defaultValue = '') {
+        if (!this.modal) this.init();
+        if (!this.modal) return Promise.resolve(null);
+
+        this.titleEl.textContent = title;
+        this.messageEl.textContent = message;
+        this.inputEl.value = defaultValue;
+        this.modal.style.display = 'flex';
+        this.inputEl.focus();
+        this.inputEl.select();
+
+        return new Promise(resolve => {
+            this._resolve = resolve;
+        });
+    },
+
+    hide(result) {
+        if (!this.modal) return;
+        this.modal.style.display = 'none';
+        if (this._resolve) {
+            this._resolve(result);
+            this._resolve = null;
+        }
+    }
+};
+
 // Replace the existing StartJobModal object in static/js/app.js
 export const StartJobModal = {
   modal: null, titleEl: null, durationEl: null, confirmBtn: null,
@@ -308,12 +363,12 @@ function connectWebSocket() {
             rpcId = 1;
             ws.send(JSON.stringify({
                 jsonrpc: "2.0", method: "printer.objects.query",
-                params: { objects: { "print_stats": null, "display_status": null, "toolhead": null, "gcode_move": null, "heater_generic pizza_oven": null } },
+                params: { objects: { "print_stats": null, "display_status": null, "toolhead": null, "gcode_move": null, "pizza_oven": null } },
                 id: rpcId++
             }));
             ws.send(JSON.stringify({
                 jsonrpc: "2.0", method: "printer.objects.subscribe",
-                params: { objects: { "print_stats": null, "display_status": null, "heater_generic pizza_oven": null, "gcode": null } },
+                params: { objects: { "print_stats": null, "display_status": null, "pizza_oven": null, "gcode": null } },
                 id: rpcId++
             }));
         };
@@ -350,6 +405,7 @@ function initializeSharedComponents() {
     StartJobModal.init();
     AlertModal.init();
     ConfirmModal.init();
+    PromptModal.init();
 }
 
 // --- MAIN EXECUTION ---

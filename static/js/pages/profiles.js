@@ -1,19 +1,13 @@
 // /static/js/pages/profiles.js - FINAL CORRECTED VERSION
 
-import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode, ConfirmModal } from '../app.js';
+import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode, ConfirmModal, PromptModal } from '../app.js';
+import { humanSize, humanTime } from '../utils.js';
 
 (function () {
   if (!location.pathname.startsWith('/profiles')) return;
 
   const $ = (sel, ctx = document) => ctx.querySelector(sel);
   const toInt = (v, d = 0) => { const n = parseInt(v, 10); return Number.isFinite(n) ? n : d; };
-  const humanSize = (bytes) => {
-    if (bytes == null) return "—";
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
-    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-  };
-  const humanTime = (ts) => { try { return new Date(ts * 1000).toLocaleString(); } catch { return "—"; } };
 
   const GcodeProcessor = {
     generate(state) {
@@ -340,6 +334,22 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
         this._createContextMenu();
         this.bind();
         this.loadList();
+        
+        // --- ZDE JE KLÍČOVÁ ZMĚNA ---
+        // Zkontrolujeme URL parametry po inicializaci stránky
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileToEdit = urlParams.get('edit');
+        const gcodeToEdit = urlParams.get('edit-gcode');
+
+        if (fileToEdit) {
+            this.editor.openForEdit(fileToEdit);
+            // Vyčistíme URL, aby se okno neotevřelo znovu při obnovení stránky
+            history.replaceState(null, '', window.location.pathname);
+        } else if (gcodeToEdit) {
+            this.openGcodeEditor(gcodeToEdit);
+            // Vyčistíme URL
+            history.replaceState(null, '', window.location.pathname);
+        }
     },
 
     bind() {
@@ -395,6 +405,7 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
             <li><button data-act="start">Start</button></li>
             <li><button data-act="edit">Edit (Visual)</button></li>
             <li><button data-act="edit-gcode">Edit G-code</button></li>
+            <li><button data-act="duplicate">Duplicate</button></li>
             <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Delete</button></li>`;
         document.body.appendChild(menu);
         this.contextMenu = menu;
@@ -423,6 +434,30 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
                 this.editor.openForEdit(name);
             } else if (act === 'edit-gcode') {
                 this.openGcodeEditor(name);
+            } else if (act === 'duplicate') {
+                const newName = await PromptModal.show('Duplicate Profile', `Enter a new name for the copy of "${name}":`, `${name} (copy)`);
+                if (!newName || newName.trim() === '') return;
+
+                showLoadingOverlay(`Duplicating profile '${name}'...`);
+                try {
+                    const payload = { originalName: name, newName: newName.trim() };
+                    const response = await fetch('/api/gcodes/duplicate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.detail || `HTTP ${response.status}`);
+                    }
+                    const result = await response.json();
+                    Toast.show(`Profile duplicated as '${result.newName}'.`, 'success');
+                    await this.loadList();
+                } catch (err) {
+                    Toast.show(`Duplication failed: ${err.message}`, 'error');
+                } finally {
+                    hideLoadingOverlay();
+                }
             } else if (act === 'delete') {
                 const confirmed = await ConfirmModal.show('Delete Profile', `Are you sure you want to delete the profile: ${name}?`);
                 if (confirmed) {
@@ -454,7 +489,6 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
             
             modal.style.display = 'flex';
             
-            // Wait for the next animation frame to ensure the modal is visible
             requestAnimationFrame(() => {
                 textarea.value = data.gcode;
                 this.gcodeEditor = window.CodeMirror.fromTextArea(textarea, {
@@ -464,7 +498,6 @@ import { Toast, showLoadingOverlay, hideLoadingOverlay, StartJobModal, sendGcode
                 });
                 this.gcodeEditor.setSize('100%', '60vh');
                 
-                // Refresh and focus after a very short delay
                 setTimeout(() => {
                     if (this.gcodeEditor) {
                         this.gcodeEditor.refresh();

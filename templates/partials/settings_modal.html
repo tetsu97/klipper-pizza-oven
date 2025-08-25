@@ -7,18 +7,17 @@
     </div>
 
     <div class="modal-body" style="margin-top: 1.5rem; border-top: 1px solid #333; padding-top: 1.5rem;">
-      <p>Here you can adjust the application settings.</p>
-      
       <div style="margin-top: 1rem;">
-        <label for="themeSelector">Theme</label>
-        <select id="themeSelector" name="theme" disabled>
-           <option value="material-darker">Material Darker</option>
-           <option value="default">Default</option>
-        </select>
-        <small style="display: block; margin-top: 0.5rem; color: #999;">This feature is currently under development.</small>
+        </div>
+
+      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #333;">
+        <h3 style="margin-top: 0;">Power Controls</h3>
+        <div class="row gap" style="justify-content: center; margin-top: 1rem; flex-wrap: wrap;">
+          <button id="powerRestartServiceBtn" class="btn">Restart App</button>
+          <button id="powerRestartDisplayBtn" class="btn">Restart Display</button> 
+          <button id="powerRebootHostBtn" class="btn btn--danger">Reboot Host</button>
+          <button id="powerShutdownHostBtn" class="btn btn--danger">Shutdown Host</button>
+        </div>
       </div>
-
-    </div>
-
   </div>
 </div>

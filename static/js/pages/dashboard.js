@@ -1,6 +1,6 @@
 // /static/js/pages/dashboard.js
-import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergencyStop, ConfirmModal } from '../app.js';
-
+import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergencyStop, ConfirmModal, PromptModal } from '../app.js';
+import { fmtSec, mapReadableState, humanSize, humanTime } from '../utils.js';
 
 (function () {
     if (!location.pathname.startsWith('/dashboard')) return;
@@ -12,56 +12,38 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
     const MAX_POINTS = 180;
     let tempChart = null;
     let lastActiveFile = null;
-    let dashPreviewReqId = 0; // Chybějící proměnné pro náhled
-    let dashPreviewCurrent = null; // Chybějící proměnné pro náhled
-
-    function fmtSec(s) {
-        if (s == null || isNaN(s)) return "—";
-        s = Math.max(0, Math.floor(s));
-        const h = Math.floor(s / 3600);
-        const m = Math.floor((s % 3600) / 60);
-        const ss = s % 60;
-        return [h, m.toString().padStart(2, "0"), ss.toString().padStart(2, "0")].join(":");
-    }
-
-    function mapReadableState(state) {
-        const s = String(state || 'unknown').toLowerCase();
-        switch (s) {
-            case 'standby':
-            case 'idle': return { text: 'Standby', color: '#2e7d32' };
-            case 'printing': return { text: 'Probíhá proces', color: '#b38900' };
-            case 'paused': return { text: 'Paused', color: '#ef6c00' };
-            case 'complete': return { text: 'Completed', color: '#1e88e5' };
-            case 'error': return { text: 'Error', color: '#c62828' };
-            default: return { text: state || 'Unknown', color: '#666' };
-        }
-    }
+    let dashPreviewReqId = 0;
+    let dashPreviewCurrent = null;
 
     function ensureChart() {
         if (window.tempChart && !window.tempChart._destroyed) return window.tempChart;
         const ctx = document.getElementById('dashTempChart')?.getContext('2d');
         if (!ctx) return null;
         window.tempChart = new Chart(ctx, {
-            type: 'line', data: { labels: [], datasets: [] },
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: []
+            },
             options: {
-                responsive: true, maintainAspectRatio: false, animation: false, parsing: false, normalized: true,
-                // ZMĚNA ZDE: Vylepšení interakce
-                interaction: {
-                    mode: 'index', // Zobrazí tooltip pro všechny datasety na daném bodě
-                    intersect: false,
-                },
-                layout: { padding: 0 },
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
                 scales: {
-                    x: { ticks: { color: '#ddd', maxRotation: 0 }, grid: { color: 'rgba(255,255,255,.07)' } },
+                    x: {
+                        type: 'category',
+                        ticks: { color: '#ddd', maxRotation: 0 },
+                        grid: { color: 'rgba(255,255,255,.07)' }
+                    },
                     y: {
                         ticks: { color: '#ddd' },
                         title: { display: true, text: '°C', color: '#ddd' },
-                        grid: { color: 'rgba(255,255,255,.07)' }
+                        grid: { color: 'rgba(255,255,255,.07)' },
+                        beginAtZero: true
                     }
                 },
                 plugins: {
                     legend: { labels: { color: '#ddd' } },
-                    // ZMĚNA ZDE: Konfigurace tooltipů
                     tooltip: {
                         mode: 'index',
                         intersect: false,
@@ -83,6 +65,63 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
         return palette[i % palette.length];
     }
 
+    async function updateTemperatures() {
+        const chart = ensureChart();
+        if (!chart) return;
+    
+        try {
+            const response = await fetch('/api/temps');
+            if (!response.ok) return;
+            const temps = await response.json();
+            const tbody = $("#dashTempsTable");
+            const nowLabel = new Date().toLocaleTimeString();
+            const activeSensorNames = Object.keys(temps);
+    
+            if (tbody) {
+                tbody.innerHTML = "";
+            }
+    
+            if (chart.data.labels.length > MAX_POINTS) {
+                chart.data.labels.shift();
+                chart.data.datasets.forEach(ds => ds.data.shift());
+            }
+            chart.data.labels.push(nowLabel);
+    
+            chart.data.datasets = chart.data.datasets.filter(ds => activeSensorNames.includes(ds.label));
+    
+            activeSensorNames.forEach((name, index) => {
+                const sensor = temps[name];
+                const actual = sensor.actual;
+    
+                if (tbody) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>${name}</td><td>${actual?.toFixed(1) ?? '—'}</td><td>${sensor.target?.toFixed(1) ?? '—'}</td>`;
+                    tbody.appendChild(tr);
+                }
+    
+                let dataset = chart.data.datasets.find(ds => ds.label === name);
+                if (!dataset) {
+                    dataset = {
+                        label: name,
+                        data: new Array(chart.data.labels.length - 1).fill(null),
+                        borderColor: pickColor(index),
+                        tension: 0.15,
+                        pointRadius: 1,
+                        fill: false
+                    };
+                    chart.data.datasets.push(dataset);
+                }
+                
+                dataset.data.push(actual);
+            });
+            
+            chart.update('none');
+    
+        } catch (error) {
+            console.error("Failed to update temperatures:", error);
+        }
+    }
+
     async function refreshRecentFiles() {
         try {
             const data = await fetch("/api/gcodes", { cache: "no-store" }).then((r) => r.json());
@@ -94,12 +133,12 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
                 const tr = document.createElement("tr");
                 tr.dataset.name = f.name;
                 tr.classList.add('clickable-row');
-                const date = f.mtime ? new Date(f.mtime * 1000).toLocaleString() : "—";
-                const size = f.size != null ? (f.size / 1024 / 1024).toFixed(2) + " MB" : "—";
+                const date = humanTime(f.mtime);
+                const size = humanSize(f.size);
                 tr.innerHTML = `
                     <td class="name-cell"><span class="fname">${f.name}</span></td>
-                    <td data-label="Last modified">${date}</td>
-                    <td data-label="Size">${size}</td>
+                    <td data-label="Last Modified">${date}</td>
+                    <td data-label="File Size">${size}</td>
                 `;
                 tbody.appendChild(tr);
             }
@@ -112,109 +151,13 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
         }
     }
 
-    function bindUpload() {
-        const btn = $("#dashUploadBtn");
-        const inp = $("#dashUpload");
-        if (!btn || !inp) return;
-        btn.addEventListener("click", () => inp.click());
-        inp.addEventListener("change", async () => {
-            const file = inp.files && inp.files[0];
-            if (!file) return;
-            const text = await file.text();
-            try {
-                const payload = { name: file.name, gcode: text, overwrite: true };
-                const resp = await fetch("/api/gcodes/save", {
-                    method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(payload)
-                });
-                if (!resp.ok) throw new Error(`Save failed: ${await resp.text()}`);
-                Toast.show("G-code úspěšně nahrán.", 'success');
-                refreshRecentFiles();
-            } catch (e) {
-                Toast.show("Nahrávání selhalo: " + e.message, 'error');
-            } finally {
-                inp.value = "";
-            }
-        });
-    }
-
-    function dashExtractThumbs(text) {
-        const map = {}; if (!text) return map;
-        const lines = String(text).split(/\r?\n/);
-        const beginRe = /^\s*;\s*thumbnail begin\s+(\d+)x(\d+)\s+(\d+)/i, endRe = /^\s*;\s*thumbnail end\b/i;
-        let capturing = false, curW = 0, curH = 0, buf = [];
-        for (const raw of lines) {
-            const line = raw || '';
-            if (!capturing) {
-                const m = line.match(beginRe);
-                if (m) { curW = parseInt(m[1], 10); curH = parseInt(m[2], 10); buf = []; capturing = true; }
-            } else {
-                if (endRe.test(line)) {
-                    const key = `${curW}x${curH}`, b64 = buf.join('').replace(/\s+/g, '');
-                    if (b64) map[key] = b64;
-                    capturing = false; curW = curH = 0; buf = [];
-                } else {
-                    const payload = line.replace(/^\s*;\s?/, '').trim();
-                    if (payload && /^[A-Za-z0-9+/=]+$/.test(payload)) buf.push(payload);
-                }
-            }
-        }
-        return map;
-    }
-    async function dashFetchThumbDataURL(name) {
-        try {
-            const r = await fetch(`/api/gcodes/download?name=${encodeURIComponent(name)}`);
-            if (!r.ok) return null;
-            const text = await r.text();
-            const thumbs = dashExtractThumbs(text);
-            if (!Object.keys(thumbs).length) return null;
-            const prefer = ['480x270', '300x300', '48x48'];
-            let key = prefer.find(k => thumbs[k]) || Object.keys(thumbs)[0];
-            return key ? `data:image/png;base64,${thumbs[key]}` : null;
-        } catch { return null; }
-    }
-    async function setDashPreview(name) {
-        const box = document.getElementById('dashPreview');
-        if (!box) return;
-        if (!name) { // Úprava pro spolehlivé vyčištění
-            box.textContent = '—';
-            box.classList.remove('has-img');
-            dashPreviewCurrent = null;
-            return;
-        }
-        if (dashPreviewCurrent === name) return;
-        
-        const myReq = ++dashPreviewReqId;
-        const url = await dashFetchThumbDataURL(name);
-        if (myReq !== dashPreviewReqId) return;
-
-        if (!url) {
-            box.textContent = '—';
-            box.classList.remove('has-img');
-            dashPreviewCurrent = null;
-            return;
-        }
-        const img = new Image();
-        img.onload = () => {
-            if (myReq !== dashPreviewReqId) return;
-            box.innerHTML = '';
-            img.className = 'dash-preview-img';
-            img.alt = 'Preview';
-            box.appendChild(img);
-            box.classList.add('has-img');
-            dashPreviewCurrent = name;
-        };
-        img.src = url;
-    }
-
     // =============================================
-    // ČÁST 2: HLAVNÍ FUNKCE PRO AKTUALIZACI UI (OPRAVENÁ)
+    // ČÁST 2: HLAVNÍ FUNKCE PRO AKTUALIZACI UI
     // =============================================
     function updateUIFromStatus(statusObjects) {
         if (!statusObjects) return;
         const printStats = statusObjects.print_stats || {};
         const displayStatus = statusObjects.display_status || {};
-        const ovenTemp = statusObjects["heater_generic pizza_oven"] || {};
         const rawState = printStats.state || "standby";
         const state = rawState.toLowerCase();
         const filename = printStats.filename || null;
@@ -232,32 +175,16 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
 
         if (showJobDetails) {
             const fileToShow = filename || lastActiveFile;
-            const jobTitle = $('#dashJobTitle');
-            const jobName = $('#dashJobName');
-            const dashFile = $('#dashFile');
-
-            setDashPreview(fileToShow);
-
-            if (jobTitle) jobTitle.textContent = "Actual program";
-            if (jobName) jobName.textContent = fileToShow;
-            if (dashFile) dashFile.textContent = fileToShow;
-
+            $('#dashJobTitle').textContent = "Actual program";
+            $('#dashJobName').textContent = fileToShow;
+            $('#dashFile').textContent = fileToShow;
         } else {
-            const jobTitle = $('#dashJobTitle');
-            const jobName = $('#dashJobName');
-            const dashFile = $('#dashFile');
-            
-            setDashPreview(null);
-
-            if (jobTitle) jobTitle.textContent = "Select a program";
-            if (jobName) jobName.textContent = "—";
-            if (dashFile) dashFile.textContent = "—";
+            $('#dashJobTitle').textContent = "Select a program";
+            $('#dashJobName').textContent = "—";
+            $('#dashFile').textContent = "—";
         }
 
-        const clearBtnContainer = $("#dashClearStateContainer");
-        if (clearBtnContainer) {
-            clearBtnContainer.style.display = ['complete', 'error'].includes(state) ? 'block' : 'none';
-        }
+        $("#dashClearStateContainer").style.display = ['complete', 'error'].includes(state) ? 'block' : 'none';
 
         const pill = $('#dashState');
         if (pill) {
@@ -282,28 +209,6 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
             eta_s = Math.max(0, parseInt(String(printDuration * (1.0 / progress - 1.0))));
         }
         $("#dashTimes").textContent = `${fmtSec(printDuration)} / ETA ${fmtSec(eta_s)}`;
-        const tbody = $("#dashTempsTable");
-        if (tbody) {
-            tbody.innerHTML = `<tr><td>pizza_oven</td><td>${ovenTemp.temperature?.toFixed(1) ?? "—"}</td><td>${ovenTemp.target?.toFixed(1) ?? "—"}</td></tr>`;
-        }
-        const chart = ensureChart();
-        if (chart && ovenTemp.temperature != null) {
-            const nowLabel = new Date().toLocaleTimeString();
-            if (chart.data.labels.length > MAX_POINTS) chart.data.labels.shift();
-            chart.data.labels.push(nowLabel);
-            let ovenDataset = chart.data.datasets.find(ds => ds.label === 'pizza_oven');
-            if (!ovenDataset) {
-                ovenDataset = { label: 'pizza_oven', data: [], borderColor: pickColor(0), tension: 0.15, pointRadius: 0, fill: false };
-                chart.data.datasets.push(ovenDataset);
-            }
-            if (ovenDataset.data.length > MAX_POINTS) ovenDataset.data.shift();
-            ovenDataset.data.push(ovenTemp.temperature);
-            chart.data.datasets.forEach(ds => {
-                while (ds.data.length < chart.data.labels.length) ds.data.unshift(null);
-                while (ds.data.length > chart.data.labels.length) ds.data.shift();
-            });
-            chart.update('none');
-        }
     }
 
     // =============================================
@@ -329,16 +234,115 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
         }
     });
 
+    // ==========================================================
+    // ČÁST 4: LOGIKA PRO KONTEXTOVÉ MENU NA DASHBOARDU
+    // ==========================================================
+    let dashContextMenu = null;
+
+    function _createDashContextMenu() {
+        if (document.getElementById('dashContextMenu')) return;
+        const menu = document.createElement('ul');
+        menu.id = 'dashContextMenu';
+        menu.className = 'context-menu';
+        menu.innerHTML = `
+            <li><button data-act="start">Start</button></li>
+            <li><button data-act="edit">Edit (Visual)</button></li>
+            <li><button data-act="edit-gcode">Edit G-code</button></li>
+            <li><button data-act="duplicate">Duplicate</button></li>
+            <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Delete</button></li>`;
+        document.body.appendChild(menu);
+        dashContextMenu = menu;
+
+        menu.addEventListener('click', (e) => {
+            const button = e.target.closest('button');
+            if (!button) return;
+            _handleDashAction(button.dataset.act, menu.dataset.name);
+            _hideDashContextMenu();
+        });
+    }
+
+    function _showDashContextMenu(event, fileName) {
+        if (!dashContextMenu) _createDashContextMenu();
+        dashContextMenu.dataset.name = fileName;
+        dashContextMenu.style.display = 'block';
+        dashContextMenu.style.left = `${event.pageX}px`;
+        dashContextMenu.style.top = `${event.pageY}px`;
+    }
+
+    function _hideDashContextMenu() {
+        if (dashContextMenu) dashContextMenu.style.display = 'none';
+    }
+
+    async function _handleDashAction(act, name) {
+        if (!act || !name) return;
+        try {
+            if (act === 'start') {
+                StartJobModal.open(name);
+            } else if (act === 'edit') {
+                window.location.href = `/profiles?edit=${encodeURIComponent(name)}`;
+            } else if (act === 'edit-gcode') {
+                window.location.href = `/profiles?edit-gcode=${encodeURIComponent(name)}`;
+            } else if (act === 'duplicate') {
+                const newName = await PromptModal.show('Duplicate Profile', `Enter a new name for the copy of "${name}":`, `${name} (copy)`);
+                if (!newName || newName.trim() === '') return;
+
+                showLoadingOverlay(`Duplicating profile '${name}'...`);
+                try {
+                    const payload = { originalName: name, newName: newName.trim() };
+                    const response = await fetch('/api/gcodes/duplicate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.detail || `HTTP ${response.status}`);
+                    }
+                    const result = await response.json();
+                    Toast.show(`Profile duplicated as '${result.newName}'.`, 'success');
+                    await refreshRecentFiles();
+                } catch (err) {
+                    Toast.show(`Duplication failed: ${err.message}`, 'error');
+                } finally {
+                    hideLoadingOverlay();
+                }
+            } else if (act === 'delete') {
+                const confirmed = await ConfirmModal.show('Delete Profile', `Are you sure you want to delete the profile: ${name}?`);
+                if (confirmed) {
+                    await fetch(`/api/gcodes/?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+                    Toast.show(`Profile ${name} deleted.`, 'success');
+                    await refreshRecentFiles();
+                }
+            }
+        } catch (err) {
+            Toast.show(`Action failed: ${err.message}`, 'error');
+        }
+    }
+
     // =============================================
-    // ČÁST 4: INICIALIZACE STRÁNKY
+    // ČÁST 5: INICIALIZACE STRÁNKY
     // =============================================
     function init() {
+        _createDashContextMenu();
+        document.addEventListener('click', _hideDashContextMenu);
+        
+        const recentFilesTbody = $("#dashRecentFiles");
+        if (recentFilesTbody) {
+            recentFilesTbody.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const row = e.target.closest('tr.clickable-row');
+                if (row) {
+                    _showDashContextMenu(e, row.dataset.name);
+                }
+            });
+        }
+        
         $("#dashPause")?.addEventListener("click", () => sendGcode("PAUSE"));
         $("#dashResume")?.addEventListener("click", () => sendGcode("RESUME"));
         $("#dashCancel")?.addEventListener("click", async () => {
             const confirmed = await ConfirmModal.show(
-                'Zrušit proces',
-                'Opravdu chcete zrušit aktuální proces? Tuto akci nelze vrátit zpět.'
+                'Cancel Process',
+                'Are you sure you want to cancel the current process? This action cannot be undone.'
             );
             if (confirmed) {
                 sendGcode("CANCEL_PRINT");
@@ -368,8 +372,10 @@ import { sendGcode, StartJobModal, Toast, handleFirmwareRestart, handleEmergency
             refreshRecentFiles();
         });
 
-        bindUpload();
         refreshRecentFiles();
+        
+        updateTemperatures();
+        setInterval(updateTemperatures, 2500);
     }
 
     window.addEventListener('DOMContentLoaded', init);

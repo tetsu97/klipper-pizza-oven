@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 from .. import settings
 from ..utils import is_safe_child, make_safe_filename
 from ..dependencies import get_http_client
-from ..models import GcodeSavePayload, FileNamePayload
+from ..models import GcodeSavePayload, FileNamePayload, DuplicateProfilePayload
 
 GCODES_DIR = Path(settings.GCODES_DIR).resolve()
 PROFILE_PREFIX = "oven_"
@@ -177,6 +177,43 @@ async def start_profile(payload: FileNamePayload, client: httpx.AsyncClient = De
         raise HTTPException(status_code=503, detail=f"Moonraker service unavailable: {e}")
     except httpx.HTTPStatusError as e:
         raise HTTPException(status_code=e.response.status_code, detail=f"Error from Klipper: {e.response.text}")
+
+@router.post("/duplicate")
+async def duplicate_profile(payload: DuplicateProfilePayload): # Změna payloadu
+    """Duplicates an existing profile with a new user-provided name."""
+    safe_original_name = make_safe_filename(payload.originalName)
+    original_file_name = f"{PROFILE_PREFIX}{safe_original_name}.gcode"
+    original_path = GCODES_DIR / original_file_name
+
+    if not (is_safe_child(original_path, GCODES_DIR) and original_path.is_file()):
+        raise HTTPException(status_code=404, detail=f"Original profile '{safe_original_name}' not found.")
+
+    safe_new_name = make_safe_filename(payload.newName)
+    if not safe_new_name:
+        raise HTTPException(status_code=400, detail="The new profile name is invalid.")
+
+    new_file_name = f"{PROFILE_PREFIX}{safe_new_name}.gcode"
+    new_path = GCODES_DIR / new_file_name
+
+    if new_path.exists():
+        raise HTTPException(status_code=400, detail=f"A profile with the name '{safe_new_name}' already exists.")
+
+    try:
+        original_content = original_path.read_text(encoding="utf-8")
+        metadata = _parse_metadata(original_content)
+        
+        metadata["name"] = safe_new_name
+        
+        header = f"; METADATA: {json.dumps(metadata)}\n"
+        gcode_body = "\n".join([line for line in original_content.splitlines() if not line.strip().startswith("; METADATA:")])
+        new_content = header + gcode_body
+        
+        new_path.write_text(new_content, encoding="utf-8")
+        logging.info(f"Profile '{safe_original_name}' duplicated to '{safe_new_name}'")
+        return {"ok": True, "newName": safe_new_name}
+    except Exception as e:
+        logging.error(f"Failed to duplicate profile {safe_original_name}: {e}")
+        raise HTTPException(status_code=500, detail=f"Error while duplicating file: {e}")
 
 @router.delete("/")
 async def delete_profile(name: str = Query(...)) -> Dict[str, bool]:

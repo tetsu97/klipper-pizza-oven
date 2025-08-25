@@ -1,21 +1,7 @@
 // /static/js/components/statusbar.js
 
-// CHANGE HERE: Import necessary functions from the main app.js module
 import { handleFirmwareRestart, handleEmergencyStop } from '../app.js';
-
-// Helper function to map a state to text and color
-function mapReadableState(state) {
-  const s = String(state || 'unknown').toLowerCase();
-  switch (s) {
-    case 'standby':
-    case 'idle':     return { text: 'Standby', color: '#2e7d32' };
-    case 'printing': return { text: 'Process Running', color: '#b38900' };
-    case 'paused':   return { text: 'Paused', color: '#ef6c00' };
-    case 'complete': return { text: 'Completed', color: '#1e88e5' };
-    case 'error':    return { text: 'Error', color: '#c62828' };
-    default:         return { text: (state || 'Unknown'), color: '#666' };
-  }
-}
+import { mapReadableState } from '../utils.js';
 
 // Function that takes data and updates ONE status bar panel
 function updateStatusBarUI(panel, statusData) {
@@ -37,7 +23,7 @@ function updateStatusBarUI(panel, statusData) {
     bar.style.width = `${Math.round(progress * 100)}%`;
   }
 
-  const ovenTemp = statusData["heater_generic pizza_oven"]?.temperature;
+  const ovenTemp = statusData["pizza_oven"]?.temperature;
   if (tempEl) {
     tempEl.textContent = (ovenTemp != null ? Number(ovenTemp).toFixed(1) : '--') + ' °C';
   }

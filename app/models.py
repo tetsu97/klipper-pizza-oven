@@ -2,7 +2,7 @@
 from pydantic import BaseModel
 from typing import Any, Dict, List, Optional
 
-# Modely pro G-kódy
+
 class GcodeScriptPayload(BaseModel):
     script: str
 
@@ -25,10 +25,13 @@ class GenerateGcodePayload(BaseModel):
     drying_time: Optional[int] = None
     drying_temp: Optional[int] = None
 
-# Modely pro soubory
 class FileNamePayload(BaseModel):
     name: str
 
 class SaveConfigPayload(BaseModel):
     name: str
     content: str
+
+class DuplicateProfilePayload(BaseModel):
+    originalName: str
+    newName: str

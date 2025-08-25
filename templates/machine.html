@@ -20,6 +20,8 @@
             <div class="machine-toolbar">
               <span id="diskUsage">Disk: …</span>
               <button id="openCreateFileBtn">Create</button>
+              <button id="uploadFileBtn">Upload</button>
+              <input type="file" id="fileUploadInput" style="display: none;" multiple>
               <button id="machineRefreshBtn">Refresh</button>
               <button id="installPizzaModuleBtn" class="btn has-tooltip" style="background-color: #2e7d32;">
                 Install Oven Module
@@ -29,10 +31,10 @@
           </div>
         </div>
 
-        <table id="machineTable" class="responsive-table">
+        <table id="machineTable" class="responsive-table file-list-table">
           <thead>
             <tr>
-              <th style="text-align:left;">Name</th>
+              <th>Name</th>
               <th>File Size</th>
               <th>Last Modified</th>
             </tr>
