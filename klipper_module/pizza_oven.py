@@ -1,256 +1,344 @@
-# klipper_module/pizza_oven.py
 import logging
 import pathlib
 import math
 from gcode import CommandError
 
-# Help texts for G-code commands
+CALIBRATE_OVEN_HELP = "Calibrate heat/cool rate of the oven"
+PROGRAM_EXECUTE_HELP = "Execute the current program"
 PROGRAM_CANCEL_HELP = "Cancel execution of the current program"
-PROGRAM_CLEAR_HELP = "Clear the current program from memory"
-ADD_SEGMENT_HELP = "Add a program segment: TEMP, RAMP_TIME (sec), HOLD_TIME (sec)"
-EXECUTE_PROGRAM_HELP = "Execute the program. Add WAIT=1 to pause G-code processing until the program finishes."
+PROGRAM_CLEAR_HELP = "Clear the current program"
+ADD_SEGMENT_HELP = "Add a program segment"
 
-# Constants
 TEMP_RANGE_TOLERANCE = 2 # Degrees C
 AMBIENT_TEMP = 25 # Degrees C
 
-# Ramp mode constants
 NONE                = 0x00
 LINEAR              = 0x01
+QUADRATIC_IN        = 0x02
+QUADRATIC_OUT       = 0x03
+QUADRATIC_INOUT     = 0x04
+CUBIC_IN            = 0x05
+CUBIC_OUT           = 0x06
+CUBIC_INOUT         = 0x07
+QUARTIC_IN          = 0x08
+QUARTIC_OUT         = 0x09
+QUARTIC_INOUT       = 0x0A
+QUINTIC_IN          = 0x0B
+QUINTIC_OUT         = 0x0C
+QUINTIC_INOUT       = 0x0D
+SINUSOIDAL_IN       = 0x0E
+SINUSOIDAL_OUT      = 0x0F
+SINUSOIDAL_INOUT    = 0x10
 
 def in_range(value, target, tolerance=0):
-    """Checks if a value is within a target's tolerance."""
-    return (value >= target - tolerance) and (value <= target - tolerance)
+    return (value >= target - tolerance) and (value <= target + tolerance)
+
+def powin(a, b):
+    return math.pow(a, b)
+
+def powout(a, b):
+    return 1 - math.pow(1-a, b)
+
+def powinout(a, b):
+    a *= 2
+    if a < 1:
+        return 0.5 * math.pow(a, b)
+    return 1 - 0.5 * math.fabs(math.pow(2-a, b))
 
 def calc_temp_ramp(mode, k):
-    """Calculates the ramp progress. Currently only supports linear."""
-    if k <= 0: return 0
-    if k >= 1: return 1
+    if k == 0 or k == 1:
+        return k
+    if mode == QUADRATIC_IN:
+        return powin(k,2)
+    if mode == QUADRATIC_OUT:
+        return powout(k,2)
+    if mode == QUADRATIC_INOUT:
+        return powinout(k,2)
+    if mode == CUBIC_IN:
+        return powin(k,3)
+    if mode == CUBIC_OUT:
+        return powout(k,3)
+    if mode == CUBIC_INOUT:
+        return powinout(k,3)
+    if mode == QUARTIC_IN:
+        return powin(k,4)
+    if mode == QUARTIC_OUT:
+        return powout(k,4)
+    if mode == QUARTIC_INOUT:
+        return powinout(k,4)
+    if mode == QUINTIC_IN:
+        return powin(k,5)
+    if mode == QUINTIC_OUT:
+        return powout(k,5)
+    if mode == QUINTIC_INOUT:
+        return powinout(k,5)
+    if mode == SINUSOIDAL_IN:
+        return 1-math.cos(k*(math.pi/2))
+    if mode == SINUSOIDAL_OUT:
+        return math.sin(k*(math.pi/2))
+    if mode == SINUSOIDAL_INOUT:
+        return -0.5*(math.cos(math.pi*k)-1)
     return k
 
 class ProgramSegment:
-    def __init__(self, target, duration, method, start_temp=AMBIENT_TEMP):
+    def __init__(self, target, duration, method):
         self.target = target
         self.duration = duration
+        if isinstance(method, int):
+            if method < NONE or method > SINUSOIDAL_INOUT:
+                raise ValueError("Invalid method value")
+        else:
+            try:
+                method = eval(f"{method.upper()}")
+            except ValueError:
+                raise ValueError("Invalid method name")
         self.method = method
-        self.start_temp = start_temp
+        self.position = 0
         self._start_time = 0
 
     def start(self, eventtime):
-        """Starts the timer for this segment."""
         self._start_time = eventtime
 
     def runtime(self, eventtime):
-        """Returns the elapsed time for this segment."""
-        if self._start_time == 0:
-            return 0
         return round(eventtime - self._start_time)
 
     def is_done(self, eventtime):
-        """Checks if the segment's duration has elapsed."""
-        if self.duration == 0:
-            return True
-        return self.runtime(eventtime) >= self.duration
+        return self.runtime(eventtime) == self.duration
 
 class Program:
     def __init__(self):
         self._segments = []
         self._iter = 0
+        self._prev_time = 0
         self._prev_temp = AMBIENT_TEMP
 
-    def add_segment(self, target, ramp_time, hold_time):
-        """Adds ramp and hold segments to the program."""
-        # Ramp segment
-        self._segments.append(ProgramSegment(target, ramp_time, LINEAR, self._prev_temp))
-        # Hold segment
-        if hold_time > 0:
-            self._segments.append(ProgramSegment(target, hold_time, NONE, target))
-        self._prev_temp = target
+    def add_segment(self,  target, ramp_time, ramp_method, hold_time):
+        segment = ProgramSegment(target, ramp_time, ramp_method)
+        self._segments.append(segment)
+        if hold_time:
+            self._segments.append(ProgramSegment(target, hold_time, "NONE"))
 
     def is_empty(self):
         return len(self._segments) == 0
 
     def is_done(self):
-        return self._iter >= len(self._segments)
+        return self._iter == len(self._segments)
 
     def start(self, eventtime):
-        """Starts the first segment of the program."""
+        self._prev_time = eventtime
+        self._segments[self._iter].start(eventtime)
+
+    def reset(self):
         self._iter = 0
-        if not self.is_done():
-            self._segments[self._iter].start(eventtime)
 
-    def get_current_segment(self):
-        """Returns the currently active program segment."""
-        if not self.is_done():
-            return self._segments[self._iter]
-        return None
-
-    def advance(self, eventtime):
-        """Moves to the next segment."""
-        if self.is_done():
-            return
-        self._iter += 1
-        if not self.is_done():
-            self._segments[self._iter].start(eventtime)
-
-    def get_target_temp_for_step(self, eventtime):
-        """Calculates the theoretical temperature for the current time in the ramp."""
-        if self.is_done():
-            return self.get_last_target()
-
-        step = self.get_current_segment()
+    def _ramp(self, start_temp, step, delta):
         if step.method == NONE:
             return step.target
+        if step.position + delta < step.duration:
+            step.position += delta
+        else:
+            step.position = step.duration
+        k = step.position / step.duration
+        if step.target >= start_temp:
+            val = (start_temp + (step.target - start_temp) * calc_temp_ramp(step.method, k))
+        else:
+            return step.target
+        return val
 
-        # Calculate progress ratio 'k' for the ramp
-        k = step.runtime(eventtime) / step.duration if step.duration > 0 else 1.0
+    def get_step(self, eventtime):
+        step = self._segments[self._iter]
+        if step.is_done(eventtime):
+            self._iter += 1
+            if self.is_done():
+                return 0
+            
+            self._prev_temp = step.target
+            step = self._segments[self._iter]
+            step.start(eventtime)
         
-        temp_diff = step.target - step.start_temp
-        return step.start_temp + temp_diff * calc_temp_ramp(step.method, k)
+        dt = eventtime - self._prev_time
+        self._prev_time = eventtime
+        return self._ramp(self._prev_temp, step, dt)
     
+    def get_current_target(self):
+        if not self.is_done():
+            return self._segments[self._iter].target
+        return 0
+
     def get_last_target(self):
-        """Returns the target temperature of the very last segment."""
         if not self._segments:
-            return AMBIENT_TEMP
+            return 0
         return self._segments[-1].target
+    
+    def __iter__(self):
+        i = 0
+        while i < len(self._segments):
+            segment = self._segments[i]
+            seg_spec = [segment.target, segment.duration, 0, segment.method]
+            if i + 1 < len(self._segments) and self._segments[i+1].method == NONE and \
+                seg_spec[0] == self._segments[i+1].target:
+                i += 1
+                seg_spec[2] = self._segments[i].duration
+            yield tuple(seg_spec)
+            i += 1
+
 
 class PizzaOven:
     def __init__(self, config):
         self.printer = config.get_printer()
         self.reactor = self.printer.get_reactor()
+        vsd = self.printer.load_object(config, "virtual_sdcard")
+        self.config_path = pathlib.Path(vsd.sdcard_dirname)
         gcode = self.printer.lookup_object("gcode")
-        
         self.pheaters = self.printer.load_object(config, "heaters")
         self.heater = self.pheaters.setup_heater(config)
-        
-        self.program = Program()
+        self.program = None
         self._prev_target = 0.
-        
-        self._state = "IDLE" # Can be IDLE, RAMPING, WAITING, HOLDING
-        self._wait_gcmd = None # For storing the G-code command we are waiting on
+        self._prev_temp =  0.
+        self._running = False
+        self.heat_rate = config.getfloat("heat_rate", 0.)
+        self.cool_rate = config.getfloat("cool_rate", 0.)
 
-        # Register G-code commands
-        gcode.register_command("PROGRAM_CLEAR", self.program_clear, desc=PROGRAM_CLEAR_HELP)
-        gcode.register_command("ADD_SEGMENT", self.segment_add, desc=ADD_SEGMENT_HELP)
-        gcode.register_command("EXECUTE_PROGRAM", self.program_execute, desc=EXECUTE_PROGRAM_HELP)
-        gcode.register_command("CANCEL_PROGRAM", self.program_cancel, desc=PROGRAM_CANCEL_HELP)
-
-        self.printer.register_event_handler("klippy:ready", self._klipper_ready)
+        gcode.register_command("CALIBRATE_OVEN", self.calibrate, False,
+                               desc=CALIBRATE_OVEN_HELP)
+        gcode.register_command("EXECUTE_PROGRAM", self.program_execute, False,
+                               desc=PROGRAM_EXECUTE_HELP)
+        gcode.register_command("CANCEL_PROGRAM", self.program_cancel, False,
+                               desc=PROGRAM_CANCEL_HELP)
+        gcode.register_command("CLEAR_PROGRAM", self.program_clear, False,
+                               desc=PROGRAM_CLEAR_HELP)
+        gcode.register_command("ADD_SEGMENT", self.segment_add, False,
+                               desc=ADD_SEGMENT_HELP)
+        self.printer.register_event_handler("klippy:ready",
+                                            self._klipper_ready)
+        self.printer.register_event_handler("klippy:shutdown",
+                                            self._klipper_shutdown)
 
     def _klipper_ready(self):
-        self.timer = self.reactor.register_timer(self._tick)
+        self.timer = self.reactor.register_timer(self._step_timer)
 
-    def _tick(self, eventtime):
-        """Main logic tick, runs every second during program execution."""
-        if self._state == "IDLE":
-            return self.reactor.NEVER
+    def _klipper_shutdown(self):
+        self.heater.set_temp(0.)
+        self.reactor.unregister_timer(self.timer)
 
+    def _step_timer(self, eventtime):
+        current_temp, target_temp = self.heater.get_temp(eventtime)
         if self.program.is_done():
-            self.program_cancel(reason="Program finished.")
+            self.pheaters.set_temperature(self.heater, 0.)
             return self.reactor.NEVER
-        
-        segment = self.program.get_current_segment()
-        current_temp, _ = self.heater.get_temp(eventtime)
 
-        # --- STATE MACHINE LOGIC ---
-        
-        if self._state == "RAMPING":
-            if segment.is_done(eventtime):
-                # Ramp time is over, now wait for temperature to be reached
-                self._state = "WAITING"
-            else:
-                temp = self.program.get_target_temp_for_step(eventtime)
-                if temp != self._prev_target:
-                    self.pheaters.set_temperature(self.heater, temp)
-                    self._prev_target = temp
+        logging.info(f"Current temp: {round(current_temp, 4)}, target temp: {round(target_temp, 4)}"
+              f" eventtime: {eventtime}, prev target: {round(self._prev_target, 4)}, "
+              f"diff: {round(self._prev_target - current_temp, 4)}, new target:")
+        if self._prev_target:
+            if self.program.get_current_target() > self._prev_target and \
+                not in_range(current_temp, self._prev_target, self.heat_rate):
+                raise CommandError("Oven not heating at expected rate.")
+            elif self.program.get_current_target() < self._prev_target and \
+                not in_range(current_temp, self._prev_temp, self.cool_rate):
+                raise CommandError("Oven not cooling at expected rate.")
 
-        elif self._state == "WAITING":
-            # Set heater to the final target of the segment
-            self.pheaters.set_temperature(self.heater, segment.target)
-            # Check if we have reached the target temperature
-            if in_range(current_temp, segment.target, TEMP_RANGE_TOLERANCE):
-                self.program.advance(eventtime)
-                # Check the new segment to decide the next state
-                new_segment = self.program.get_current_segment()
-                if new_segment is None: # Program ended
-                    self.program_cancel(reason="Program finished.")
-                    return self.reactor.NEVER
-                elif new_segment.method == NONE:
-                    self._state = "HOLDING"
-                else: # Next segment is another ramp
-                    self._state = "RAMPING"
-
-        elif self._state == "HOLDING":
-            # Maintain target temperature
-            self.pheaters.set_temperature(self.heater, segment.target)
-            if segment.is_done(eventtime):
-                # Hold time is over, advance to the next segment (which should be a ramp)
-                self.program.advance(eventtime)
-                self._state = "RAMPING"
+        self._prev_temp = current_temp
+        temp = self.program.get_step(eventtime)
+        if temp != self._prev_target:
+            self.pheaters.set_temperature(self.heater, temp)
+            self._prev_target = temp
 
         return eventtime + 1
 
-    def program_clear(self, gcmd=None):
-        self.program_cancel()
-        self.program = Program()
-        if gcmd:
-            gcmd.respond_info("Oven program cleared.")
+    def calibrate(self, gcmd):
+        calibration_temp = gcmd.get_float("TEMP", self.heater.max_temp - 20)
+        cool_wait = gcmd.get_int("COOL_RATE_TIME", 300)
+        toolhead = self.printer.lookup_object("toolhead")
+        heat_rate = 0.
+        cool_rate = 0.
+
+        start_temp = current_temp = list(map(int, self.heater.get_temp(0)))[0]
+        start_time = eventtime = self.reactor.monotonic()
+        self.pheaters.set_temperature(self.heater, calibration_temp)
+        
+        while current_temp <= calibration_temp and not self.printer.is_shutdown():
+            print_time = toolhead.get_last_move_time()
+            eventtime = self.reactor.pause(eventtime + 1.)
+            current_temp, _ = self.heater.get_temp(eventtime)
+        
+        heat_rate = (round(current_temp) - round(start_temp)) / (eventtime - start_time)
+
+        # Wait for a few seconds for the temperature to settle
+        eventtime = self.reactor.pause(eventtime + 20.)
+
+        # target would be a step higher than upper from the loop
+        # below
+        start_temp, _ = self.heater.get_temp(eventtime)
+        self.pheaters.set_temperature(self.heater, 0.)
+        start_time = eventtime = self.reactor.monotonic()
+        while not self.printer.is_shutdown():
+            print_time = toolhead.get_last_move_time()
+            eventtime = self.reactor.pause(eventtime + 1.)
+            if eventtime - start_time >= cool_wait:
+                break
+
+        end_temp, _ = self.heater.get_temp(eventtime)
+        cool_rate = (round(start_temp) - round(end_temp)) / (eventtime - start_time)
+            
+
+        config = self.printer.lookup_object("configfile")
+        config.set("pizza_oven", "heat_rate", heat_rate)
+        config.set("pizza_oven", "cool_rate", cool_rate)
+
+    def program_execute(self, gcmd):
+        if not self.heat_rate or not self.cool_rate:
+            raise gcmd.error("Oven is not calibrated. Run CALIBRATE_OVEN first.")
+
+        if not self.program or self.program.is_empty():
+            raise gcmd.error("Program is empty")
+
+        self.program.reset()
+        self.program.start(self.reactor.monotonic())
+        self.reactor.update_timer(self.timer, self.reactor.monotonic() + 1)
+        logging.info("Program started...")
+
+    def program_cancel(self, gcmd):
+        if self.program:
+            self.reactor.update_timer(self.timer, self.reactor.NEVER)
+        self.pheaters.set_temperature(self.heater, 0)
+
+    def program_clear(self, gcmd):
+        self.reactor.update_timer(self.timer, self.reactor.NEVER)
+        self.program = None
 
     def segment_add(self, gcmd):
         temp = gcmd.get_float("TEMP")
         ramp_time = gcmd.get_int("RAMP_TIME")
+        ramp_mode = gcmd.get("RAMP_MODE", "LINEAR")
         hold_time = gcmd.get_int("HOLD_TIME", 0)
-        self.program.add_segment(temp, ramp_time, hold_time)
-        if gcmd:
-            gcmd.respond_info(f"Segment added: Temp={temp}, Ramp={ramp_time}s, Hold={hold_time}s")
 
-    def program_execute(self, gcmd):
-        """Executes the loaded program."""
-        if self.program.is_empty():
-            raise CommandError("No program to execute. Use ADD_SEGMENT first.")
-        
-        # Check if we should wait for completion
-        wait = gcmd.get_int('WAIT', 0, minval=0, maxval=1)
+        if not self.program:
+            self.program = Program()
 
-        now = self.reactor.monotonic()
-        self.program.start(now)
-        
-        first_segment = self.program.get_current_segment()
-        if first_segment.method == NONE:
-            self._state = "HOLDING"
-        else:
-            self._state = "RAMPING"
+        prev_target = self.program.get_last_target()
+        if self.heat_rate and temp > prev_target:
+            if ramp_time * self.heat_rate < temp - prev_target:
+                raise gcmd.error("Ramp rate too fast for heater's heat rate.")
+        elif self.cool_rate:
+            if ramp_time * self.cool_rate > prev_target - temp:
+                raise gcmd.error("Cool rate too slow to meat ramp time.")
 
-        self.reactor.update_timer(self.timer, now)
-        gcmd.respond_info("Executing oven program...")
+        try:
+            self.program.add_segment(temp, ramp_time, ramp_mode, hold_time)
+            logging.info("Program segment added: temp=%s, ramp=%s, hold=%s",
+                          temp, ramp_time, hold_time)
+        except Exception as e:
+            raise gcmd.error("Failed to add program section: %s" % str(e))
 
-        # If WAIT=1, pause G-code processing
-        if wait:
-            self._wait_gcmd = gcmd
-            self.reactor.pause(gcmd.pause())
-
-    def program_cancel(self, gcmd=None, reason="Oven program cancelled."):
-        """Stops the currently running program."""
-        self._state = "IDLE"
-        self._prev_target = 0.
-        self.reactor.update_timer(self.timer, self.reactor.NEVER)
-        
-        # If a G-code command was waiting, resume it
-        if self._wait_gcmd:
-            self._wait_gcmd.resume()
-            self._wait_gcmd = None
-
-        if gcmd:
-            gcmd.respond_info(reason)
-        # If the program finished on its own, log it to the console
-        elif "finished" in reason:
-            self.printer.lookup_object('gcode').respond_info(reason)
-
+    def stats(self, eventtime):
+        return self.heater.stats(eventtime)
+    
     def get_status(self, eventtime):
         status = self.heater.get_status(eventtime)
-        status['program_state'] = self._state
-        if self._state != 'IDLE' and not self.program.is_done():
-            status['segment_target'] = self.program.get_current_segment().target
+        if self.program:
+            status.update({"segment_target" : self.program.get_current_target(),
+            })
         return status
 
 def load_config(config):

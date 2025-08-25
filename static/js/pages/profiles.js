@@ -323,153 +323,158 @@ import { humanSize, humanTime } from '../utils.js';
   }
 
   const ProfilesPage = {
-    editor: null,
-    gcodeEditor: null,
-    gcodeEditorCurrentFile: null,
-    contextMenu: null,
+        editor: null,
+        gcodeEditor: null,
+        gcodeEditorCurrentFile: null,
+        contextMenu: null,
 
-    init() {
-        this.editor = new ProfileEditorManager();
-        this.editor.setReloadCallback(() => this.loadList());
-        this._createContextMenu();
-        this.bind();
-        this.loadList();
-        
-        // --- ZDE JE KLÍČOVÁ ZMĚNA ---
-        // Zkontrolujeme URL parametry po inicializaci stránky
-        const urlParams = new URLSearchParams(window.location.search);
-        const fileToEdit = urlParams.get('edit');
-        const gcodeToEdit = urlParams.get('edit-gcode');
+        init() {
+            this.editor = new ProfileEditorManager();
+            this.editor.setReloadCallback(() => this.loadList());
+            this._createContextMenu();
+            this.bind();
+            this.loadList();
+            
+            // Zpracování URL parametrů pro přímé otevření editoru
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileToEdit = urlParams.get('edit');
+            const gcodeToEdit = urlParams.get('edit-gcode');
 
-        if (fileToEdit) {
-            this.editor.openForEdit(fileToEdit);
-            // Vyčistíme URL, aby se okno neotevřelo znovu při obnovení stránky
-            history.replaceState(null, '', window.location.pathname);
-        } else if (gcodeToEdit) {
-            this.openGcodeEditor(gcodeToEdit);
-            // Vyčistíme URL
-            history.replaceState(null, '', window.location.pathname);
-        }
-    },
-
-    bind() {
-        $('#profilesRefreshBtn')?.addEventListener('click', () => this.loadList());
-        $('#openGeneratorBtn')?.addEventListener('click', () => this.editor.openForCreate());
-        
-        const tbody = $('#profilesTable tbody');
-        tbody?.addEventListener('click', (e) => {
-            const row = e.target.closest('tr.clickable-row');
-            if (row) { e.preventDefault(); StartJobModal.open(row.dataset.name); }
-        });
-        tbody?.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            const row = e.target.closest('tr.clickable-row');
-            if (row) this._showContextMenu(e, row.dataset.name);
-        });
-        document.addEventListener('click', () => this._hideContextMenu());
-
-        $('#gcodeEditorCloseBtn')?.addEventListener('click', () => this.closeGcodeEditor());
-        $('#gcodeEditorSaveBtn')?.addEventListener('click', () => this.saveGcodeEditor());
-    },
-
-    async loadList() {
-        const tbody = $('#profilesTable tbody');
-        if (!tbody) return;
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading…</td></tr>';
-        try {
-            const data = await ProfilesService.list();
-            const files = data?.files || [];
-            tbody.innerHTML = '';
-            files.forEach(f => {
-                const tr = document.createElement('tr');
-                tr.dataset.name = f.name;
-                tr.classList.add('clickable-row');
-                tr.innerHTML = `
-                    <td class="name-cell" data-label="Name"><span class="fname">${f.name}</span></td>
-                    <td data-label="File size">${humanSize(f.size)}</td>
-                    <td data-label="Last modified">${humanTime(f.mtime)}</td>
-                    <td data-label="Filament">${f.filament_type || '—'}</td>`;
-                tbody.appendChild(tr);
-            });
-        } catch (e) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Failed to load profiles.</td></tr>';
-        }
-    },
-
-    _createContextMenu() {
-        if ($('#profilesContextMenu')) return;
-        const menu = document.createElement('ul');
-        menu.id = 'profilesContextMenu';
-        menu.className = 'context-menu';
-        menu.innerHTML = `
-            <li><button data-act="start">Start</button></li>
-            <li><button data-act="edit">Edit (Visual)</button></li>
-            <li><button data-act="edit-gcode">Edit G-code</button></li>
-            <li><button data-act="duplicate">Duplicate</button></li>
-            <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Delete</button></li>`;
-        document.body.appendChild(menu);
-        this.contextMenu = menu;
-        menu.addEventListener('click', (e) => {
-            const button = e.target.closest('button');
-            if (!button) return;
-            this._handleAction(button.dataset.act, menu.dataset.name);
-            this._hideContextMenu();
-        });
-    },
-    
-    _showContextMenu(event, fileName) {
-        this.contextMenu.dataset.name = fileName;
-        this.contextMenu.style.display = 'block';
-        this.contextMenu.style.left = `${event.pageX}px`;
-        this.contextMenu.style.top = `${event.pageY}px`;
-    },
-    _hideContextMenu() { if (this.contextMenu) this.contextMenu.style.display = 'none'; },
-
-    async _handleAction(act, name) {
-        if (!act || !name) return;
-        try {
-            if (act === 'start') {
-                StartJobModal.open(name);
-            } else if (act === 'edit') {
-                this.editor.openForEdit(name);
-            } else if (act === 'edit-gcode') {
-                this.openGcodeEditor(name);
-            } else if (act === 'duplicate') {
-                const newName = await PromptModal.show('Duplicate Profile', `Enter a new name for the copy of "${name}":`, `${name} (copy)`);
-                if (!newName || newName.trim() === '') return;
-
-                showLoadingOverlay(`Duplicating profile '${name}'...`);
-                try {
-                    const payload = { originalName: name, newName: newName.trim() };
-                    const response = await fetch('/api/gcodes/duplicate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) {
-                        const err = await response.json();
-                        throw new Error(err.detail || `HTTP ${response.status}`);
-                    }
-                    const result = await response.json();
-                    Toast.show(`Profile duplicated as '${result.newName}'.`, 'success');
-                    await this.loadList();
-                } catch (err) {
-                    Toast.show(`Duplication failed: ${err.message}`, 'error');
-                } finally {
-                    hideLoadingOverlay();
-                }
-            } else if (act === 'delete') {
-                const confirmed = await ConfirmModal.show('Delete Profile', `Are you sure you want to delete the profile: ${name}?`);
-                if (confirmed) {
-                    await ProfilesService.remove(name);
-                    Toast.show(`Profile ${name} deleted.`, 'success');
-                    await this.loadList();
-                }
+            if (fileToEdit) {
+                this.editor.openForEdit(fileToEdit);
+                history.replaceState(null, '', window.location.pathname);
+            } else if (gcodeToEdit) {
+                this.openGcodeEditor(gcodeToEdit);
+                history.replaceState(null, '', window.location.pathname);
             }
-        } catch (err) {
-            Toast.show(`Action failed: ${err.message}`, 'error');
-        }
-    },
+        },
+
+        bind() {
+            $('#profilesRefreshBtn')?.addEventListener('click', () => this.loadList());
+            $('#openGeneratorBtn')?.addEventListener('click', () => this.editor.openForCreate());
+            
+            const tbody = $('#profilesTable tbody');
+            tbody?.addEventListener('click', (e) => {
+                const row = e.target.closest('tr.clickable-row');
+                if (row) { e.preventDefault(); StartJobModal.open(row.dataset.name); }
+            });
+            tbody?.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                const row = e.target.closest('tr.clickable-row');
+                if (row) this._showContextMenu(e, row.dataset.name);
+            });
+            document.addEventListener('click', (e) => {
+                if (this.contextMenu && !this.contextMenu.contains(e.target)) {
+                    this._hideContextMenu();
+                }
+            });
+
+            $('#gcodeEditorCloseBtn')?.addEventListener('click', () => this.closeGcodeEditor());
+            $('#gcodeEditorSaveBtn')?.addEventListener('click', () => this.saveGcodeEditor());
+        },
+
+        async loadList() {
+            const tbody = $('#profilesTable tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading…</td></tr>';
+            try {
+                const data = await ProfilesService.list();
+                const files = data?.files || [];
+                tbody.innerHTML = '';
+                files.forEach(f => {
+                    const tr = document.createElement('tr');
+                    tr.dataset.name = f.name;
+                    tr.classList.add('clickable-row');
+                    tr.innerHTML = `
+                        <td class="name-cell" data-label="Name"><span class="fname">${f.name}</span></td>
+                        <td data-label="File size">${humanSize(f.size)}</td>
+                        <td data-label="Last modified">${humanTime(f.mtime)}</td>
+                        <td data-label="Filament">${f.filament_type || '—'}</td>`;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:red;">Failed to load profiles.</td></tr>';
+            }
+        },
+
+        _createContextMenu() {
+            if (this.contextMenu) return;
+            const menu = document.createElement('ul');
+            menu.id = 'profilesContextMenu';
+            menu.className = 'context-menu';
+            menu.innerHTML = `
+                <li><button data-act="start">Start</button></li>
+                <li><button data-act="edit">Edit (Visual)</button></li>
+                <li><button data-act="edit-gcode">Edit G-code</button></li>
+                <li><button data-act="duplicate">Duplicate</button></li>
+                <li><button data-act="delete" class="btn--danger" style="color:#f57c7c;">Delete</button></li>`;
+            document.body.appendChild(menu);
+            this.contextMenu = menu;
+
+            // ===== ZDE JE OPRAVA =====
+            menu.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const button = e.target.closest('button');
+                if (!button) return;
+                
+                await this._handleAction(button.dataset.act, menu.dataset.name);
+                this._hideContextMenu();
+            });
+        },
+        
+        _showContextMenu(event, fileName) {
+            // Skryjeme druhé menu pro jistotu
+            const otherMenu = document.getElementById('dashContextMenu');
+            if (otherMenu) otherMenu.style.display = 'none';
+
+            if (!this.contextMenu) this._createContextMenu();
+            this.contextMenu.dataset.name = fileName;
+            this.contextMenu.style.display = 'block';
+            this.contextMenu.style.left = `${event.pageX}px`;
+            this.contextMenu.style.top = `${event.pageY}px`;
+        },
+
+        _hideContextMenu() { 
+            if (this.contextMenu) this.contextMenu.style.display = 'none'; 
+        },
+
+        async _handleAction(act, name) {
+            if (!act || !name) return;
+            try {
+                if (act === 'start') {
+                    StartJobModal.open(name);
+                } else if (act === 'edit') {
+                    this.editor.openForEdit(name);
+                } else if (act === 'edit-gcode') {
+                    this.openGcodeEditor(name);
+                } else if (act === 'duplicate') {
+                    const newName = await PromptModal.show('Duplicate Profile', `Enter a new name for the copy of "${name}":`, `${name} (copy)`);
+                    if (!newName || !newName.trim()) return;
+                    showLoadingOverlay(`Duplicating profile '${name}'...`);
+                    try {
+                        const payload = { originalName: name, newName: newName.trim() };
+                        const response = await fetch('/api/gcodes/duplicate', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!response.ok) throw new Error((await response.json()).detail || `HTTP ${response.status}`);
+                        const result = await response.json();
+                        Toast.show(`Profile duplicated as '${result.newName}'.`, 'success');
+                        await this.loadList();
+                    } catch (err) { Toast.show(`Duplication failed: ${err.message}`, 'error'); }
+                    finally { hideLoadingOverlay(); }
+                } else if (act === 'delete') {
+                    if (await ConfirmModal.show('Delete Profile', `Are you sure you want to delete: ${name}?`)) {
+                        await ProfilesService.remove(name);
+                        Toast.show(`Profile ${name} deleted.`, 'success');
+                        await this.loadList();
+                    }
+                }
+            } catch (err) {
+                Toast.show(`Action failed: ${err.message}`, 'error');
+            }
+        },
 
     async openGcodeEditor(name) {
         try {

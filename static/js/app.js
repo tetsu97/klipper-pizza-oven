@@ -1,10 +1,10 @@
-// /static/js/app.js (FINAL CORRECTED AND COMPLETE VERSION)
+// /static/js/app.js - FINÁLNÍ OPRAVENÁ A KOMPLETNÍ VERZE
 
 let ws = null;
 let reconnectTimer = null;
 let rpcId = 1;
 
-// --- EXPORTED FUNCTIONS AND OBJECTS (for modules) ---
+// --- EXPORTOVANÉ FUNKCE A OBJEKTY (pro moduly) ---
 
 export function sendGcode(script) {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
@@ -20,6 +20,7 @@ export function sendGcode(script) {
 export const Toast = {
   container: null,
   init() {
+    if (this.container) return; // Inicializovat pouze jednou
     this.container = document.getElementById('toast-container');
   },
   show(message, type = 'info', duration = 4000) {
@@ -48,6 +49,7 @@ export const AlertModal = {
   closeBtn: null,
   
   init() {
+    if (this.modal) return; // Zabránění vícenásobné inicializaci
     this.modal = document.getElementById('alertModal');
     if (!this.modal) return;
     this.titleEl = document.getElementById('alertModalTitle');
@@ -90,6 +92,7 @@ export const ConfirmModal = {
     _resolve: null,
 
     init() {
+        if (this.modal) return;
         this.modal = document.getElementById('confirmModal');
         if (!this.modal) return;
         this.titleEl = document.getElementById('confirmModalTitle');
@@ -116,6 +119,7 @@ export const ConfirmModal = {
         this.titleEl.textContent = title;
         this.messageEl.textContent = message;
         this.modal.style.display = 'flex';
+        this.okBtn.focus(); // Zaměříme se na tlačítko OK
 
         return new Promise(resolve => {
             this._resolve = resolve;
@@ -142,6 +146,7 @@ export const PromptModal = {
     _resolve: null,
 
     init() {
+        if (this.modal) return;
         this.modal = document.getElementById('promptModal');
         if (!this.modal) return;
         this.titleEl = document.getElementById('promptModalTitle');
@@ -156,7 +161,10 @@ export const PromptModal = {
             if (e.target === this.modal) this.hide(null);
         });
         this.inputEl.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') this.hide(this.inputEl.value);
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.hide(this.inputEl.value);
+            }
             if (e.key === 'Escape') this.hide(null);
         });
     },
@@ -187,7 +195,6 @@ export const PromptModal = {
     }
 };
 
-// Replace the existing StartJobModal object in static/js/app.js
 export const StartJobModal = {
   modal: null, titleEl: null, durationEl: null, confirmBtn: null,
   chartCanvas: null, chart: null, currentFile: null,
